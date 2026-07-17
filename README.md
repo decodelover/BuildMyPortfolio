@@ -1,36 +1,112 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# BuildMyPortfolio
+
+AI-powered developer portfolio builder. Create stunning, production-ready portfolio websites in minutes using the power of Google Gemini.
+
+## Tech Stack
+
+| Layer | Technology |
+| --- | --- |
+| **Framework** | Next.js 15 (App Router) |
+| **Language** | TypeScript |
+| **Styling** | Tailwind CSS v4, Shadcn UI |
+| **Auth** | Firebase Authentication |
+| **Database** | Cloud Firestore |
+| **Storage** | Firebase Storage |
+| **State** | Zustand |
+| **Forms** | React Hook Form + Zod |
+| **Animations** | Framer Motion |
+| **AI** | Google Gemini API |
+| **Payments** | Paystack, Flutterwave |
+| **Analytics** | PostHog |
+| **Charts** | Recharts |
+| **Tables** | TanStack Table |
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18.18+ 
+- npm 9+
+- A Firebase project with Auth, Firestore, and Storage enabled
+- A Google Gemini API key
+
+### Installation
+
+```bash
+# Clone the repository
+git clone <your-repo-url>
+cd BuildMyPortfolio
+
+# Install dependencies
+npm install
+
+# Copy environment variables
+cp .env.example .env.local
+# Then edit .env.local with your actual credentials
+```
+
+### Development
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Build
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm start
+```
 
-## Learn More
+### Lint
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run lint
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Project Structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+src/
+├── app/                    # Next.js App Router pages & layouts
+├── components/
+│   ├── ui/                 # Shadcn UI primitives
+│   ├── shared/             # Reusable cross-feature components
+│   ├── layouts/            # Navbar, Footer, Sidebar
+│   ├── forms/              # Form components (auth, profile, settings)
+│   ├── dashboard/          # Dashboard-specific widgets
+│   ├── admin/              # Admin panel components
+│   └── portfolio/          # Portfolio editor & preview components
+├── features/
+│   ├── auth/               # Authentication flows
+│   ├── portfolios/         # Portfolio CRUD & generation
+│   ├── payments/           # Paystack & Flutterwave integration
+│   ├── ai/                 # Gemini AI generation logic
+│   ├── themes/             # Theme management & previews
+│   ├── support/            # Help & support ticket system
+│   └── admin/              # Admin analytics & user management
+├── lib/
+│   ├── firebase/           # Firebase client & admin SDK setup
+│   ├── constants/          # App-wide constants & enums
+│   ├── validations/        # Zod schemas for forms & API
+│   ├── helpers/            # Utility functions
+│   └── seo/                # SEO metadata constructors
+├── hooks/                  # Custom React hooks
+├── services/               # API service layer
+├── store/                  # Zustand state stores
+├── providers/              # React context providers
+├── contexts/               # Additional context definitions
+├── themes/                 # Theme configuration files
+├── types/                  # TypeScript type definitions
+└── styles/                 # Additional global styles
+```
 
-## Deploy on Vercel
+## Environment Variables
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Copy `.env.example` to `.env.local` and fill in all required values. See the template for documentation on each variable.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## License
+
+Proprietary — All rights reserved.
