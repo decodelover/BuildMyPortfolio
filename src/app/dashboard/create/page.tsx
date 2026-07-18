@@ -1,315 +1,210 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { Sparkles, ArrowRight, ArrowLeft, Loader2, Wand2, Check, Tag, Laptop, Terminal } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase/firestore";
 import { useAuthStore } from "@/store/useAuthStore";
-import { cn } from "@/lib/utils";
+import { useWebsiteBuilderStore } from "@/store/useWebsiteBuilderStore";
+import { WizardLayout } from "@/components/dashboard/wizard/WizardLayout";
+import { StepCard } from "@/components/dashboard/wizard/StepCard";
+import { AlertCircle, RotateCcw, Loader2, Home, WifiOff } from "lucide-react";
+import { toast } from "sonner";
 
-const themeSelections = [
-  { id: "minimalist", name: "Modern Minimalist", desc: "Clean typography, light backgrounds, spacious elements." },
-  { id: "cyberpunk", name: "Neon Cyberpunk", desc: "High contrast borders, neon accents, dark terminal frames." },
-  { id: "brutalist", name: "Neo-Brutalist", desc: "Raw stark gridlines, heavy drop-shadows, high-impact titles." },
-];
-
-const keywordSuggestions = [
-  "Frontend Architect",
-  "Cloud Solutions Engineer",
-  "Full-Stack Developer",
-  "UI/UX Designer",
-  "Cybersecurity Analyst",
-  "Data Scientist",
-];
-
-const scaffoldSteps = [
-  "Analyzing developer profile fields...",
-  "Running Gemini AI copywriters for Hero text...",
-  "Formatting layout section schemas...",
-  "Optimizing image media blocks...",
-  "Deploying compiled index page to edge database...",
-];
-
-export default function CreatePortfolioPage() {
-  const { user } = useAuthStore();
+export default function WebsiteBuilderWizardPage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuthStore();
+  const {
+    currentStep,
+    loadBuilderDraft,
+    saveBuilderDraft,
+    unsavedChanges,
+    loading,
+    error,
+    resetStore,
+  } = useWebsiteBuilderStore();
 
-  const [step, setStep] = useState(1);
-  const [portfolioName, setPortfolioName] = useState("");
-  const [profession, setProfession] = useState("");
-  const [selectedTheme, setSelectedTheme] = useState("minimalist");
-  
-  // Scaffolding progression states
-  const [generating, setGenerating] = useState(false);
-  const [currentBuildStep, setCurrentBuildStep] = useState(0);
+  const [mounted, setMounted] = useState(false);
 
-  // Cycle build steps emulator messages while loading
+  // Sync component mount state to prevent hydration mismatches
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (generating) {
-      interval = setInterval(() => {
-        setCurrentBuildStep((prev) => {
-          if (prev < scaffoldSteps.length - 1) {
-            return prev + 1;
-          }
-          return prev;
-        });
-      }, 1200);
-    } else {
-      setCurrentBuildStep(0);
+    setMounted(true);
+    return () => {
+      // Clean up Zustand store when leaving the wizard page
+      resetStore();
+    };
+  }, [resetStore]);
+
+  // Load user draft configuration
+  useEffect(() => {
+    if (mounted && user?.uid) {
+      loadBuilderDraft(user.uid);
     }
-    return () => clearInterval(interval);
-  }, [generating]);
+  }, [mounted, user?.uid, loadBuilderDraft]);
 
-  const handleGenerate = async () => {
-    if (!portfolioName.trim()) {
-      toast.error("Please enter a name for your portfolio.");
-      return;
+  // Monitor online / offline states
+  useEffect(() => {
+    if (!mounted) return;
+
+    const handleOnline = () => {
+      toast.success("Connection restored! Syncing your changes...", { duration: 3000 });
+      // Trigger a forced save of any unsaved changes accumulated during offline mode
+      if (unsavedChanges) {
+        saveBuilderDraft(true);
+      }
+    };
+
+    const handleOffline = () => {
+      toast.warning("You are offline. Changes will save locally and sync when you reconnect.");
+    };
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, [mounted, unsavedChanges, saveBuilderDraft]);
+
+  // Warn the user before they leave the page with unsaved modifications
+  useEffect(() => {
+    if (!mounted) return;
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (unsavedChanges) {
+        e.preventDefault();
+        e.returnValue = "You have unsaved changes that will be lost. Are you sure you want to exit?";
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [mounted, unsavedChanges]);
+
+  // Route protection - redirect guests to login
+  useEffect(() => {
+    if (mounted && !authLoading && !user) {
+      toast.error("Please sign in to access the Website Builder Wizard.");
+      router.push(`/login?redirect=/dashboard/create`);
     }
-    if (!user) return;
+  }, [mounted, user, authLoading, router]);
 
-    setGenerating(true);
-    try {
-      // 1. Emulate compile workflow time
-      await new Promise((resolve) => setTimeout(resolve, 6000));
+  // Loading skeleton block mirroring the exact layout structure
+  if (!mounted || authLoading || (loading && !error)) {
+    return (
+      <div className="flex h-screen w-screen flex-col overflow-hidden bg-background text-foreground select-none">
+        {/* Header Skeleton */}
+        <div className="h-14 border-b border-border bg-card/60 flex items-center justify-between px-6">
+          <div className="flex items-center gap-2.5">
+            <div className="h-8 w-8 rounded-lg bg-muted shimmer" />
+            <div className="h-4.5 w-32 bg-muted rounded shimmer" />
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-7 w-24 bg-muted rounded-full shimmer" />
+            <div className="h-7.5 w-24 bg-muted rounded-xl shimmer" />
+          </div>
+        </div>
 
-      // 2. Add document to Firestore database
-      await addDoc(collection(db, "portfolios"), {
-        userId: user.uid,
-        name: portfolioName,
-        theme: selectedTheme,
-        profession: profession || null,
-        status: "draft",
-        domain: `${portfolioName.toLowerCase().replace(/[^a-z0-9]/g, "")}.buildmyportfolio.com`,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
+        {/* Stepper Skeleton */}
+        <div className="h-11 border-b border-border bg-card/30 flex items-center gap-4 px-6 overflow-hidden hidden md:flex">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-2 shrink-0">
+              <div className="h-5 w-5 rounded-full bg-muted shimmer" />
+              <div className="h-3 w-16 bg-muted rounded shimmer" />
+              <div className="h-[1px] w-4 bg-muted" />
+            </div>
+          ))}
+        </div>
 
-      toast.success("AI Developer portfolio generated successfully!");
-      router.push("/dashboard/portfolios");
-    } catch (err) {
-      console.error("AI Portfolio generation failure:", err);
-      toast.error("Unable to generate website layout. Please try again.");
-    } finally {
-      setGenerating(false);
-    }
-  };
-
-  return (
-    <div className="space-y-8 text-left max-w-3xl mx-auto">
-      <div className="space-y-1">
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Create AI Portfolio</h1>
-        <p className="text-sm text-muted-foreground font-medium">Configure options below to let Google Gemini scaffold your resume pages.</p>
-      </div>
-
-      <div className="rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-sm relative overflow-hidden">
-        
-        {/* Step Indicator Top Bar */}
-        {!generating && (
-          <div className="flex items-center justify-between border-b border-border pb-5 text-xs font-semibold text-muted-foreground mb-6">
-            <span>Step {step} of 2</span>
-            <div className="flex gap-1.5">
-              <span className={cn("h-1.5 w-8 rounded-full transition-colors", step >= 1 ? "bg-primary" : "bg-secondary")} />
-              <span className={cn("h-1.5 w-8 rounded-full transition-colors", step >= 2 ? "bg-primary" : "bg-secondary")} />
+        {/* Workspace Skeleton */}
+        <div className="flex flex-1 overflow-hidden">
+          {/* Sidebar Skeleton */}
+          <div className="w-72 border-r border-border bg-card/45 p-5 space-y-4 hidden md:block">
+            <div className="space-y-1.5 pb-4 border-b border-border">
+              <div className="h-3.5 w-16 bg-muted rounded shimmer" />
+              <div className="h-2 w-full bg-muted rounded shimmer" />
+            </div>
+            <div className="space-y-3 pt-2">
+              {Array.from({ length: 7 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <div className="h-6 w-6 rounded-lg bg-muted shimmer shrink-0" />
+                  <div className="space-y-1 flex-1">
+                    <div className="h-3 w-2/3 bg-muted rounded shimmer" />
+                    <div className="h-2 w-1/2 bg-muted rounded shimmer" />
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-        )}
 
-        <AnimatePresence mode="wait">
-          {generating ? (
-            /* Scaffolding build log emulator */
-            <motion.div
-              key="generating-state"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-              className="py-12 flex flex-col items-center justify-center text-center space-y-6"
-            >
-              <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 text-primary">
-                <Loader2 className="h-8 w-8 animate-spin" />
-                <Sparkles className="h-4 w-4 text-accent absolute -top-1 -right-1 animate-pulse" />
-              </div>
-
-              <div className="space-y-2 max-w-sm">
-                <h3 className="text-base font-bold text-foreground">Scaffolding Portfolio Layout...</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed h-10">
-                  {scaffoldSteps[currentBuildStep]}
-                </p>
-              </div>
-
-              {/* Graphical progress visual line */}
-              <div className="w-full max-w-xs bg-secondary h-1.5 rounded-full overflow-hidden border border-border">
-                <motion.div
-                  className="bg-primary h-full"
-                  initial={{ width: "0%" }}
-                  animate={{ width: `${((currentBuildStep + 1) / scaffoldSteps.length) * 100}%` }}
-                  transition={{ duration: 0.8 }}
-                />
-              </div>
-
-              {/* Build term log mock lines */}
-              <div className="w-full max-w-md rounded-xl bg-zinc-950 p-4 border border-zinc-800 text-left font-mono text-[10px] text-cyan-400 space-y-1.5 shadow-inner">
-                <div className="flex items-center gap-1.5 text-zinc-500">
-                  <Terminal className="h-3 w-3" />
-                  <span>GEMINI-COMPILER-LOG v1.0.0</span>
-                </div>
-                {scaffoldSteps.slice(0, currentBuildStep + 1).map((log, idx) => (
-                  <div key={idx} className="flex gap-2">
-                    <span className="text-zinc-600 select-none">&gt;</span>
-                    <span className={idx === currentBuildStep ? "text-white animate-pulse" : "text-zinc-400"}>
-                      {log} {idx < currentBuildStep && " [OK]"}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          ) : step === 1 ? (
-            /* Step 1: Info & Tag suggestions */
-            <motion.div
-              key="step-1"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.25 }}
-              className="space-y-6"
-            >
-              <div className="space-y-2">
-                <h3 className="text-base font-bold text-foreground">General Website Details</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Enter a portfolio name and customize your developer title. Tap suggestion pills to automatically inject profession tags.
-                </p>
-              </div>
-
-              <div className="space-y-4 font-semibold text-xs">
-                <div className="space-y-1.5">
-                  <label className="text-muted-foreground uppercase text-[10px]">Website Project Title</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Sarah's Full-Stack Cloud Portfolio"
-                    value={portfolioName}
-                    onChange={(e) => setPortfolioName(e.target.value)}
-                    className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/45"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-muted-foreground uppercase text-[10px]">Developer Profession</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Lead Frontend Architect"
-                    value={profession}
-                    onChange={(e) => setProfession(e.target.value)}
-                    className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/45"
-                  />
-                </div>
-
-                {/* Pill tag suggesters */}
-                <div className="space-y-2">
-                  <label className="text-muted-foreground uppercase text-[9px] flex items-center gap-1.5">
-                    <Tag className="h-3.5 w-3.5" /> Popular Title Presets
-                  </label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {keywordSuggestions.map((kw) => (
-                      <button
-                        key={kw}
-                        type="button"
-                        onClick={() => setProfession(kw)}
-                        className={cn(
-                          "rounded-full px-3 py-1 border border-border bg-card text-[10px] font-bold transition-all cursor-pointer",
-                          profession === kw ? "bg-primary text-primary-foreground border-primary" : "text-muted-foreground hover:bg-muted"
-                        )}
-                      >
-                        {kw}
-                      </button>
-                    ))}
-                  </div>
+          {/* Canvas content Skeleton */}
+          <div className="flex-1 p-6 sm:p-8 space-y-6 overflow-y-auto max-w-4xl mx-auto">
+            <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
+              <div className="flex items-start gap-4">
+                <div className="h-12 w-12 rounded-2xl bg-muted shimmer shrink-0" />
+                <div className="space-y-2 flex-1">
+                  <div className="h-3 w-16 bg-muted rounded shimmer" />
+                  <div className="h-5 w-40 bg-muted rounded shimmer" />
+                  <div className="h-3.5 w-full bg-muted rounded shimmer" />
                 </div>
               </div>
-
-              <button
-                onClick={() => {
-                  if (!portfolioName.trim()) {
-                    toast.error("Please enter a name for your portfolio.");
-                    return;
-                  }
-                  setStep(2);
-                }}
-                className="flex items-center gap-1.5 rounded-lg bg-primary px-5 py-2.5 text-xs font-semibold text-primary-foreground shadow hover:bg-primary/95 transition-all ml-auto cursor-pointer"
-              >
-                Choose Style Theme
-                <ArrowRight className="h-3.5 w-3.5" />
-              </button>
-            </motion.div>
-          ) : (
-            /* Step 2: Stylized Theme Selection Grid */
-            <motion.div
-              key="step-2"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.25 }}
-              className="space-y-6"
-            >
-              <div className="space-y-2">
-                <h3 className="text-base font-bold text-foreground">Select presentation preset stylesheet</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Select a starting layout template. Themes manage layout grids, typography, and accent colors without affecting site logs.
-                </p>
+              <div className="pt-4 border-t border-border">
+                <div className="h-32 w-full rounded-xl bg-muted/30 shimmer border border-dashed border-border" />
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {themeSelections.map((t) => (
-                  <div
-                    key={t.id}
-                    onClick={() => setSelectedTheme(t.id)}
-                    className={cn(
-                      "rounded-xl border p-4 cursor-pointer hover:border-primary/45 transition-all select-none text-left flex flex-col justify-between h-[130px] bg-card",
-                      selectedTheme === t.id ? "border-primary bg-primary/5 shadow-md" : "border-border"
-                    )}
-                  >
-                    <h4 className="font-extrabold text-foreground text-xs">{t.name}</h4>
-                    <p className="text-[10px] text-muted-foreground leading-relaxed mt-1.5">{t.desc}</p>
-                    <div className="flex justify-between items-center pt-2">
-                      <span className="text-[8px] font-mono text-muted-foreground uppercase">gemini active</span>
-                      <span className={cn(
-                        "h-4.5 w-4.5 rounded-full border flex items-center justify-center text-[9px] font-bold text-white transition-colors",
-                        selectedTheme === t.id ? "bg-primary border-primary" : "border-border bg-background"
-                      )}>
-                        {selectedTheme === t.id && "✓"}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex justify-between items-center pt-5 border-t border-border mt-4">
-                <button
-                  onClick={() => setStep(1)}
-                  disabled={generating}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                >
-                  <ArrowLeft className="h-3.5 w-3.5" />
-                  Go Back
-                </button>
-
-                <button
-                  onClick={handleGenerate}
-                  disabled={generating}
-                  className="flex items-center gap-1.5 rounded-lg bg-primary px-5 py-2.5 text-xs font-semibold text-primary-foreground shadow hover:bg-primary/95 transition-all cursor-pointer"
-                >
-                  <Wand2 className="h-3.5 w-3.5 text-accent animate-pulse" />
-                  Scaffold Website Draft
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
+            </div>
+          </div>
+        </div>
       </div>
+    );
+  }
 
-    </div>
+  // Error boundary layout page
+  if (error) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 text-center">
+        <div className="max-w-md space-y-6">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-destructive/10 text-destructive border border-destructive/20 shadow-md">
+            <WifiOff className="h-8 w-8 animate-pulse" />
+          </div>
+
+          <div className="space-y-2">
+            <h1 className="text-2xl font-black tracking-tight text-foreground sm:text-3xl">
+              Failed to load draft session
+            </h1>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              We encountered a Firestore sync or authentication timeout when retrieving your draft. Please verify your connection status.
+            </p>
+            <div className="rounded-xl bg-muted p-3.5 text-left font-mono text-[11px] text-muted-foreground overflow-x-auto max-w-full border border-border">
+              {error}
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 items-center justify-center pt-2">
+            <button
+              onClick={() => user && loadBuilderDraft(user.uid)}
+              className="flex w-full sm:w-auto items-center justify-center gap-1.5 rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-primary-foreground shadow hover:bg-primary/95 transition-all cursor-pointer"
+            >
+              <RotateCcw className="h-4 w-4 animate-spin-once" />
+              Retry Loading Draft
+            </button>
+            <button
+              onClick={() => router.push("/dashboard")}
+              className="flex w-full sm:w-auto items-center justify-center gap-1.5 rounded-xl border border-border px-5 py-2.5 text-xs font-bold hover:bg-muted transition-colors cursor-pointer"
+            >
+              <Home className="h-4 w-4" />
+              Exit to Dashboard
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <WizardLayout>
+      <StepCard stepId={currentStep} />
+    </WizardLayout>
   );
 }

@@ -101,6 +101,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   };
 
+  // Exempt website builder focus mode from standard layout
+  if (pathname.startsWith("/dashboard/create")) {
+    return <ProtectedRoute>{children}</ProtectedRoute>;
+  }
+
   return (
     <ProtectedRoute>
       <div className="min-h-screen flex bg-background text-foreground transition-colors duration-300">
