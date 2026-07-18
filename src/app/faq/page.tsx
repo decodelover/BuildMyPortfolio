@@ -5,51 +5,51 @@ import Link from "next/link";
 import Navbar from "@/components/layouts/navbar";
 import Footer from "@/components/layouts/footer";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, HelpCircle, MessageSquare, Search } from "lucide-react";
+import { ChevronDown, HelpCircle, Search, MessageSquare, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const faqCategories = ["All", "Account & Onboarding", "Builder & Templates", "Domains & Hosting", "Pricing & Billing"];
+const faqCategories = ["All", "Pricing", "Publishing", "Hosting", "AI", "Themes", "Support", "Payments", "Domains"];
 
 const faqsList = [
   {
-    category: "Account & Onboarding",
-    q: "How do I create a portfolio?",
-    a: "After registering, you can input your professional experience or parse your resume. Select a theme, customize the style elements, and hit publish. Our builder takes care of generating a responsive layout automatically.",
+    category: "AI",
+    q: "How does the Google Gemini AI builder assemble my portfolio?",
+    a: "Google Gemini takes your work highlights, years of experience, and project descriptions, structures them into optimized schema structures, synthesizes professional copywriting bios, and suggests a layout optimized to capture the interest of engineering recruiters.",
   },
   {
-    category: "Account & Onboarding",
-    q: "Can I connect my LinkedIn or GitHub?",
-    a: "Yes. In your dashboard, you can connect your GitHub account to import repositories and contribution activity graphs. You can also sync LinkedIn profiles to load work history directly.",
+    category: "Themes",
+    q: "Can I switch layout themes after generating my website?",
+    a: "Yes. Your written database profile details are independent of the layouts. You can toggle between Minimalist, Neon Cyberpunk, Stark Brutalist, and Luxury presets in your editor dashboard instantly.",
   },
   {
-    category: "Builder & Templates",
-    q: "Can I change themes after my portfolio is built?",
-    a: "Yes. Your text details and theme preferences are separate. You can toggle between Minimalist, Cyberpunk, and Brutalist themes anytime without losing your profile information.",
+    category: "Domains",
+    q: "Can I connect my own custom domains?",
+    a: "Yes. All Pro and Premium plans support custom domain integration. We provide instructions for pointing your DNS record fields (A or CNAME) to our servers.",
   },
   {
-    category: "Builder & Templates",
-    q: "Can I edit the code directly?",
-    a: "Our Premium plan allows you to download clean React/TypeScript and Tailwind CSS code files (.zip). You can also inject custom HTML/CSS stylesheet properties in the editor settings panel.",
+    category: "Hosting",
+    q: "Are linked domain SSL certificates free?",
+    a: "Yes. SSL certificates are provisioned and renewed automatically for all active subdomains and linked custom domains securely through Cloudflare Edge gateways.",
   },
   {
-    category: "Domains & Hosting",
-    q: "Where is my portfolio hosted?",
-    a: "Every portfolio is hosted on our secure, CDN edge network. Free plans get a default subdomain (yourname.buildmyportfolio.com). Pro and Premium accounts can link custom domains.",
+    category: "Pricing",
+    q: "Is the Pro checkout plan really a one-time payment?",
+    a: "Yes. We offer standard one-time payments for both Pro and Premium workspace plans. Pay once and receive lifetime hosting and builder upgrades without recurring monthly fees.",
   },
   {
-    category: "Domains & Hosting",
-    q: "Are the custom domain SSL certificates free?",
-    a: "Yes. We configure and renew SSL/TLS encryption certificates automatically for all linked custom domains using our Cloudflare edge rules.",
+    category: "Payments",
+    q: "Which payment gateways do you support?",
+    a: "We support secure global checkouts using Stripe, Paystack, and Flutterwave. All credit cards and mobile money transactions are securely processed via SSL.",
   },
   {
-    category: "Pricing & Billing",
-    q: "What is your refund policy?",
-    a: "We offer a 14-day money-back guarantee. If you are not fully satisfied with your Pro or Premium purchase, contact support and we will issue a full refund immediately.",
+    category: "Support",
+    q: "What support channels do you offer for draft adjustments?",
+    a: "Hobby users receive basic email troubleshooting. Pro plans unlock priority email queueing, and Premium unlocks 24/7 slack developer support channels.",
   },
   {
-    category: "Pricing & Billing",
-    q: "Are there any recurring hosting costs?",
-    a: "No. Our Pro and Premium plans are one-time payments for life. We host your portfolio forever on our serverless edge node setup with no extra fees.",
+    category: "Publishing",
+    q: "How fast do design updates sync to the live site?",
+    a: "Instantly. When you make edits or upload assets in your editor dashboard and hit 'Publish', all changes propagate globally across Cloudflare edge nodes in seconds.",
   },
 ];
 
@@ -70,80 +70,57 @@ export default function FAQPage() {
       <Navbar />
 
       {/* Header section */}
-      <section className="relative overflow-hidden pt-20 pb-16 lg:pt-24 lg:pb-20 border-b border-border bg-gradient-to-b from-background to-secondary/10">
-        <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
-        <div className="absolute top-12 left-1/4 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
-        <div className="absolute top-24 right-1/4 h-64 w-64 rounded-full bg-accent/10 blur-3xl" />
+      <section className="relative overflow-hidden pt-20 pb-16 lg:pt-24 lg:pb-20 border-b border-border/40 bg-secondary/5">
+        <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,#80808007_1px,transparent_1px),linear-gradient(to_bottom,#80808007_1px,transparent_1px)] bg-[size:14px_24px]" />
+        <div className="absolute top-12 left-1/4 h-64 w-64 rounded-full bg-primary/10 blur-3xl opacity-60" />
+        <div className="absolute top-24 right-1/4 h-64 w-64 rounded-full bg-accent/10 blur-3xl opacity-60" />
 
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center space-y-6">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4 }}
-            className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3.5 py-1.5 text-xs font-semibold text-primary"
+            className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-[9px] uppercase tracking-wider font-extrabold text-primary"
           >
-            <HelpCircle className="h-4 w-4 text-accent animate-pulse" />
+            <HelpCircle className="h-3.5 w-3.5 text-accent animate-pulse" />
             Support Center
           </motion.div>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl text-foreground"
-          >
+          <h1 className="text-3xl font-black tracking-tight sm:text-4xl md:text-5xl">
             Frequently Asked Questions
-          </motion.h1>
+          </h1>
 
-          <motion.p
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="mx-auto max-w-2xl text-lg text-muted-foreground"
-          >
-            Got questions about DNS configuration, themes, or how our AI writes copy? Search our documentation registry.
-          </motion.p>
-
-          {/* Search bar */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="mx-auto max-w-md relative mt-4"
-          >
-            <Search className="absolute left-3.5 top-3.5 h-4.5 w-4.5 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Search questions, settings, dns..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setActiveFaq(null);
-              }}
-              className="w-full rounded-xl border border-border bg-background/85 px-10 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/45 focus:border-primary shadow-md backdrop-blur-md transition-all"
-            />
-          </motion.div>
+          <p className="mx-auto max-w-2xl text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            Find quick answers about pricing plans, custom domain mappings, hosting speeds, and Google Gemini capabilities.
+          </p>
         </div>
       </section>
 
-      {/* Accordion area */}
-      <section className="py-20 bg-background">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-          
-          {/* Category Selector Tabs */}
-          <div className="flex flex-wrap items-center justify-center gap-2 mb-12 border-b border-border pb-6">
+      {/* Content grid */}
+      <section className="py-16 bg-background flex-1 text-left">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+          {/* Search Box */}
+          <div className="relative mb-10 max-w-md mx-auto">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search support answers..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-xl border border-border/80 bg-background pl-10 pr-4 py-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/45"
+            />
+          </div>
+
+          {/* Category Filter Header */}
+          <div className="flex justify-center gap-2 overflow-x-auto pb-4 mb-10 text-[9px] font-extrabold uppercase tracking-wider select-none">
             {faqCategories.map((cat) => (
               <button
                 key={cat}
-                onClick={() => {
-                  setSelectedCategory(cat);
-                  setActiveFaq(null);
-                }}
+                onClick={() => setSelectedCategory(cat)}
                 className={cn(
-                  "rounded-lg border px-4 py-2 text-xs font-semibold transition-all",
+                  "px-3.5 py-1.5 rounded-lg border transition-all cursor-pointer whitespace-nowrap",
                   selectedCategory === cat
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border hover:bg-muted text-muted-foreground"
+                    ? "bg-primary border-primary text-primary-foreground"
+                    : "border-border/60 text-muted-foreground bg-background hover:bg-muted"
                 )}
               >
                 {cat}
@@ -151,65 +128,66 @@ export default function FAQPage() {
             ))}
           </div>
 
-          {/* Accordion List */}
-          <div className="space-y-4 max-w-3xl mx-auto min-h-[250px]">
-            <AnimatePresence mode="popLayout">
-              {filteredFaqs.length > 0 ? (
-                filteredFaqs.map((faq, idx) => {
-                  const isActive = activeFaq === idx;
-                  return (
-                    <motion.div
-                      key={faq.q}
-                      layout
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="rounded-xl border border-border bg-card/60 backdrop-blur-md overflow-hidden transition-all duration-200"
-                    >
-                      <button
-                        onClick={() => setActiveFaq(isActive ? null : idx)}
-                        className="flex w-full items-center justify-between p-5 text-left font-bold text-base hover:bg-muted/30 transition-colors"
+          {/* Accordion Questions */}
+          <div className="space-y-4">
+            {filteredFaqs.length > 0 ? (
+              filteredFaqs.map((faq, index) => (
+                <div key={index} className="rounded-xl border border-border bg-card/15 overflow-hidden transition-all duration-200">
+                  <button
+                    onClick={() => setActiveFaq(activeFaq === index ? null : index)}
+                    className="flex w-full items-center justify-between p-5 text-left font-bold text-xs sm:text-sm hover:bg-muted/30 transition-colors"
+                  >
+                    <span>{faq.q}</span>
+                    <ChevronDown className={cn("h-4.5 w-4.5 text-muted-foreground transition-transform duration-200", activeFaq === index && "rotate-180 text-primary")} />
+                  </button>
+                  <AnimatePresence initial={false}>
+                    {activeFaq === index && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
                       >
-                        <span className="text-foreground">{faq.q}</span>
-                        <ChevronDown className={cn("h-5 w-5 text-muted-foreground transition-transform duration-200", isActive && "rotate-180 text-primary")} />
-                      </button>
-                      
-                      {isActive && (
-                        <div className="border-t border-border p-5 text-sm leading-relaxed text-muted-foreground bg-muted/10">
+                        <div className="border-t border-border p-5 text-xs leading-relaxed text-muted-foreground bg-muted/10">
                           {faq.a}
                         </div>
-                      )}
-                    </motion.div>
-                  );
-                })
-              ) : (
-                <div className="text-center py-12 text-muted-foreground space-y-2">
-                  <HelpCircle className="h-10 w-10 mx-auto opacity-35" />
-                  <p className="text-sm font-semibold">No questions match your search query.</p>
-                  <p className="text-xs">Try searching for other keywords like &quot;hosting&quot; or &quot;sync&quot;.</p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
-              )}
-            </AnimatePresence>
+              ))
+            ) : (
+              <div className="rounded-2xl border border-dashed border-border p-12 text-center text-muted-foreground max-w-sm mx-auto flex flex-col items-center">
+                <HelpCircle className="h-8 w-8 mb-2" />
+                <p className="text-xs">No matching questions found.</p>
+              </div>
+            )}
           </div>
         </div>
       </section>
 
-      {/* FAQ CTA */}
-      <section className="py-20 text-center relative overflow-hidden bg-secondary">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px] opacity-10" />
-        
-        <div className="mx-auto max-w-xl px-4 sm:px-6 lg:px-8 relative space-y-6">
-          <MessageSquare className="h-10 w-10 mx-auto text-accent" />
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">Still have questions?</h2>
-          <p className="text-sm text-slate-300">
-            If you cannot find the answer to your question in our FAQ list, reach out to our customer support desk directly.
+      {/* Bottom CTA */}
+      <section className="py-20 text-center relative overflow-hidden bg-zinc-950 text-white">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808003_1px,transparent_1px),linear-gradient(to_bottom,#80808003_1px,transparent_1px)] opacity-80" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-80 w-80 rounded-full bg-primary/10 blur-3xl opacity-60" />
+
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 relative space-y-6">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary mx-auto mb-2 border border-primary/20">
+            <MessageSquare className="h-6 w-6" />
+          </div>
+          <h2 className="text-2xl font-black tracking-tight text-white">
+            Still have questions?
+          </h2>
+          <p className="mx-auto max-w-xl text-zinc-400 text-xs leading-relaxed">
+            Our support engineers are ready to help you map custom domains or configure GitHub sync. Reach out to our team directly.
           </p>
-          <div className="pt-2">
+          <div className="pt-4 flex justify-center">
             <Link
               href="/contact"
-              className="rounded-xl bg-primary px-8 py-3 text-sm font-semibold text-white shadow hover:bg-primary/95 transition-colors"
+              className="flex items-center gap-2 rounded-xl bg-primary px-7 py-3.5 text-xs font-bold text-white shadow-lg hover:bg-primary/95 transition-all duration-200"
             >
-              Contact Support Ticket
+              Contact Support Team
+              <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
         </div>

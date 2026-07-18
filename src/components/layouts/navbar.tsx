@@ -2,38 +2,42 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useAuthStore } from "@/store/useAuthStore";
 import { Menu, X, Sun, Moon, Sparkles, LogOut, LayoutDashboard } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 export default function Navbar() {
+  const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const { theme, setTheme } = useTheme();
   const { user, loading, logout } = useAuthStore();
 
   useEffect(() => {
-    setTimeout(() => {
-      setMounted(true);
-    }, 0);
+    setMounted(true);
   }, []);
 
   const navLinks = [
     { label: "Features", href: "/features" },
+    { label: "Templates", href: "/templates" },
+    { label: "Showcase", href: "/showcase" },
     { label: "Pricing", href: "/pricing" },
     { label: "About", href: "/about" },
-    { label: "Contact", href: "/contact" },
     { label: "FAQ", href: "/faq" },
+    { label: "Blog", href: "#", badge: "Soon" },
+    { label: "Contact", href: "/contact" },
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md transition-colors duration-300">
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/70 backdrop-blur-md transition-colors duration-300">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Brand Logo */}
-        <Link href="/" className="flex items-center gap-2 font-bold text-xl tracking-tight">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-tr from-primary to-accent text-primary-foreground shadow-md">
-            <Sparkles className="h-5 w-5" />
+        <Link href="/" className="flex items-center gap-2 font-black text-lg tracking-tight select-none">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-primary to-accent text-primary-foreground shadow-md shadow-primary/20">
+            <Sparkles className="h-4.5 w-4.5" />
           </div>
           <span className="bg-gradient-to-r from-primary via-foreground to-accent bg-clip-text text-transparent">
             BuildMyPortfolio
@@ -41,16 +45,42 @@ export default function Navbar() {
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-8">
-          {navLinks.map((link) => (
-            <Link
-              key={link.label}
-              href={link.href}
-              className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
-            >
-              {link.label}
-            </Link>
-          ))}
+        <nav className="hidden lg:flex items-center gap-6">
+          {navLinks.map((link) => {
+            const isActive = pathname === link.href;
+            const isSoon = link.badge === "Soon";
+            return (
+              <div key={link.label} className="relative flex items-center">
+                {isSoon ? (
+                  <span className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground/60 cursor-not-allowed select-none px-2 py-1">
+                    {link.label}
+                    <span className="text-[9px] font-extrabold uppercase px-1 py-0.5 rounded bg-primary/10 text-primary scale-90 border border-primary/20">
+                      {link.badge}
+                    </span>
+                  </span>
+                ) : (
+                  <Link
+                    href={link.href}
+                    className={cn(
+                      "text-sm font-semibold px-2 py-1 rounded-lg transition-colors relative group",
+                      isActive
+                        ? "text-primary"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {link.label}
+                    {isActive && (
+                      <motion.span
+                        layoutId="activeNavIndicator"
+                        className="absolute bottom-0 left-2 right-2 h-0.5 bg-gradient-to-r from-primary to-accent rounded-full"
+                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                      />
+                    )}
+                  </Link>
+                )}
+              </div>
+            );
+          })}
         </nav>
 
         {/* Action Buttons & Session Control */}
@@ -59,29 +89,29 @@ export default function Navbar() {
           {mounted && (
             <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="rounded-lg p-2 hover:bg-muted text-muted-foreground hover:text-foreground transition-all duration-200"
+              className="rounded-xl p-2 hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-all duration-200 cursor-pointer border border-transparent hover:border-border/30"
               aria-label="Toggle theme"
             >
-              {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              {theme === "dark" ? <Sun className="h-4.5 w-4.5" /> : <Moon className="h-4.5 w-4.5" />}
             </button>
           )}
 
           {loading ? (
-            <div className="h-9 w-20 animate-pulse rounded-lg bg-muted" />
+            <div className="h-9 w-20 animate-pulse rounded-xl bg-muted" />
           ) : user ? (
             <div className="flex items-center gap-3">
               <Link
                 href="/dashboard"
-                className="flex items-center gap-1.5 rounded-lg border border-border px-3.5 py-1.5 text-sm font-semibold hover:bg-muted transition-colors"
+                className="flex items-center gap-1.5 rounded-xl border border-border/80 px-4 py-2 text-xs font-bold hover:bg-muted transition-all duration-200 shadow-sm"
               >
-                <LayoutDashboard className="h-4 w-4" />
+                <LayoutDashboard className="h-3.5 w-3.5" />
                 Dashboard
               </Link>
               <button
                 onClick={logout}
-                className="flex items-center gap-1.5 rounded-lg bg-secondary px-3.5 py-1.5 text-sm font-semibold text-secondary-foreground hover:bg-secondary/80 transition-colors"
+                className="flex items-center gap-1.5 rounded-xl bg-secondary px-4 py-2 text-xs font-bold text-secondary-foreground hover:bg-secondary/80 transition-colors shadow-sm cursor-pointer"
               >
-                <LogOut className="h-4 w-4" />
+                <LogOut className="h-3.5 w-3.5" />
                 Sign Out
               </button>
             </div>
@@ -89,37 +119,37 @@ export default function Navbar() {
             <div className="flex items-center gap-3">
               <Link
                 href="/login"
-                className="rounded-lg px-3.5 py-1.5 text-sm font-semibold hover:text-primary transition-colors"
+                className="rounded-xl px-4 py-2 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors"
               >
                 Sign In
               </Link>
               <Link
                 href="/register"
-                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90 transition-colors"
+                className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground shadow hover:bg-primary/95 transition-all duration-200 hover:scale-[1.02]"
               >
-                Get Started
+                Start Building
               </Link>
             </div>
           )}
         </div>
 
-        {/* Mobile Menu & Toggles */}
-        <div className="flex items-center gap-2 md:hidden">
+        {/* Mobile Hamburger & Theme Toggle */}
+        <div className="flex items-center gap-2 lg:hidden">
           {mounted && (
             <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="rounded-lg p-2 hover:bg-muted text-muted-foreground hover:text-foreground"
+              className="rounded-xl p-2 hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
               aria-label="Toggle theme"
             >
-              {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              {theme === "dark" ? <Sun className="h-4.5 w-4.5" /> : <Moon className="h-4.5 w-4.5" />}
             </button>
           )}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="rounded-lg p-2 hover:bg-muted text-muted-foreground hover:text-foreground"
+            className="rounded-xl p-2 hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
             aria-label="Open menu"
           >
-            {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
       </div>
@@ -131,28 +161,48 @@ export default function Navbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden border-t border-border bg-background transition-colors duration-300"
+            transition={{ duration: 0.2 }}
+            className="lg:hidden border-t border-border bg-background/95 backdrop-blur-md"
           >
-            <div className="space-y-1 px-4 pb-4 pt-2">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.label}
-                  href={link.href}
-                  onClick={() => setIsOpen(false)}
-                  className="block rounded-lg px-3 py-2 text-base font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                >
-                  {link.label}
-                </Link>
-              ))}
-              <div className="border-t border-border mt-4 pt-4 space-y-2">
+            <div className="space-y-1.5 px-4 pb-6 pt-3">
+              {navLinks.map((link) => {
+                const isActive = pathname === link.href;
+                const isSoon = link.badge === "Soon";
+                return isSoon ? (
+                  <span
+                    key={link.label}
+                    className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-muted-foreground/50 cursor-not-allowed select-none"
+                  >
+                    {link.label}
+                    <span className="text-[8px] font-extrabold uppercase px-1 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
+                      {link.badge}
+                    </span>
+                  </span>
+                ) : (
+                  <Link
+                    key={link.label}
+                    href={link.href}
+                    onClick={() => setIsOpen(false)}
+                    className={cn(
+                      "block rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors",
+                      isActive
+                        ? "bg-primary/10 text-primary"
+                        : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
+              <div className="border-t border-border mt-4 pt-4 space-y-2.5">
                 {loading ? (
-                  <div className="h-10 w-full animate-pulse rounded-lg bg-muted" />
+                  <div className="h-10 w-full animate-pulse rounded-xl bg-muted" />
                 ) : user ? (
                   <>
                     <Link
                       href="/dashboard"
                       onClick={() => setIsOpen(false)}
-                      className="flex w-full items-center justify-center gap-2 rounded-lg border border-border py-2 text-sm font-semibold hover:bg-muted transition-colors"
+                      className="flex w-full items-center justify-center gap-2 rounded-xl border border-border py-2.5 text-sm font-bold hover:bg-muted transition-colors"
                     >
                       <LayoutDashboard className="h-4 w-4" />
                       Dashboard
@@ -162,7 +212,7 @@ export default function Navbar() {
                         logout();
                         setIsOpen(false);
                       }}
-                      className="flex w-full items-center justify-center gap-2 rounded-lg bg-secondary py-2 text-sm font-semibold text-secondary-foreground hover:bg-secondary/95 transition-colors"
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-secondary py-2.5 text-sm font-bold text-secondary-foreground hover:bg-secondary/95 transition-colors cursor-pointer"
                     >
                       <LogOut className="h-4 w-4" />
                       Sign Out
@@ -173,16 +223,16 @@ export default function Navbar() {
                     <Link
                       href="/login"
                       onClick={() => setIsOpen(false)}
-                      className="block text-center rounded-lg py-2 text-sm font-semibold hover:bg-muted transition-colors"
+                      className="block text-center rounded-xl py-2.5 text-sm font-bold hover:bg-muted text-muted-foreground transition-colors"
                     >
                       Sign In
                     </Link>
                     <Link
                       href="/register"
                       onClick={() => setIsOpen(false)}
-                      className="block text-center rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/95 transition-colors"
+                      className="block text-center rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/95 transition-all"
                     >
-                      Get Started
+                      Start Building
                     </Link>
                   </>
                 )}

@@ -69,105 +69,94 @@ export default function ContactPage() {
     <div className="flex flex-col min-h-screen bg-background">
       <Navbar />
 
-      <section className="relative overflow-hidden pt-20 pb-16 lg:pt-24 lg:pb-20 border-b border-border bg-gradient-to-b from-background to-secondary/10">
-        <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
-        <div className="absolute top-12 left-1/4 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
-        <div className="absolute top-24 right-1/4 h-64 w-64 rounded-full bg-accent/10 blur-3xl" />
+      {/* Header section */}
+      <section className="relative overflow-hidden pt-20 pb-16 lg:pt-24 lg:pb-20 border-b border-border/40 bg-secondary/5">
+        <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,#80808007_1px,transparent_1px),linear-gradient(to_bottom,#80808007_1px,transparent_1px)] bg-[size:14px_24px]" />
+        <div className="absolute top-12 left-1/4 h-64 w-64 rounded-full bg-primary/10 blur-3xl opacity-60" />
+        <div className="absolute top-24 right-1/4 h-64 w-64 rounded-full bg-accent/10 blur-3xl opacity-60" />
 
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center space-y-6">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4 }}
-            className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3.5 py-1.5 text-xs font-semibold text-primary"
+            className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-[9px] uppercase tracking-wider font-extrabold text-primary"
           >
-            <Mail className="h-4 w-4 text-accent animate-pulse" />
+            <Mail className="h-3.5 w-3.5 text-accent animate-pulse" />
             Get In Touch
           </motion.div>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl text-foreground"
-          >
-            We&apos;re Here to Help.
-            <br />
+          <h1 className="text-3xl font-black tracking-tight sm:text-4xl md:text-5xl leading-tight">
+            We&apos;re Here to Help.{" "}
             <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
               Drop Us a Message.
             </span>
-          </motion.h1>
+          </h1>
 
-          <motion.p
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="mx-auto max-w-2xl text-lg text-muted-foreground"
-          >
-            Have a question about templates, API pricing, or custom domains? Send us a ticket and our support team will respond within 24 hours.
-          </motion.p>
+          <p className="mx-auto max-w-2xl text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            Have a question about template customization, custom domain linkages, or billing configurations? Send us a ticket.
+          </p>
         </div>
       </section>
 
-      {/* Main Form content */}
-      <section className="py-20 bg-background">
+      {/* Main content grid */}
+      <section className="py-20 bg-background flex-1">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
             
-            {/* Left Side: Contact Information Cards */}
+            {/* Left Side: Contact details */}
             <div className="lg:col-span-5 space-y-6 text-left">
-              <div className="rounded-2xl border border-border p-6 bg-card/45 shadow-sm space-y-4">
-                <h3 className="text-xl font-bold text-foreground">Contact Channels</h3>
+              <div className="rounded-2xl border border-border bg-card/45 p-6 space-y-4">
+                <h3 className="text-sm font-bold text-foreground">Support Channels</h3>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Reach out directly via our specialized corporate support portals or use our coordinates below.
+                  Reach out directly via our support portals or corporate headquarters details.
                 </p>
 
                 <div className="space-y-4 pt-2">
                   <div className="flex gap-4 items-center">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
-                      <Mail className="h-5 w-5" />
+                      <Mail className="h-4.5 w-4.5" />
                     </div>
                     <div>
-                      <h4 className="text-xs font-semibold text-muted-foreground uppercase">General Support</h4>
-                      <p className="text-sm font-bold text-foreground mt-0.5">support@buildmyportfolio.com</p>
+                      <h4 className="text-[10px] font-bold text-muted-foreground uppercase">General Support</h4>
+                      <p className="text-xs font-bold text-foreground mt-0.5">support@buildmyportfolio.com</p>
                     </div>
                   </div>
 
                   <div className="flex gap-4 items-center">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent shrink-0">
-                      <MessageSquare className="h-5 w-5" />
+                      <MessageSquare className="h-4.5 w-4.5" />
                     </div>
                     <div>
-                      <h4 className="text-xs font-semibold text-muted-foreground uppercase">Live Chat Support</h4>
-                      <p className="text-sm font-bold text-foreground mt-0.5">Available on dashboard editor</p>
+                      <h4 className="text-[10px] font-bold text-muted-foreground uppercase">Live Chat Support</h4>
+                      <p className="text-xs font-bold text-foreground mt-0.5">Available on dashboard editor</p>
                     </div>
                   </div>
 
                   <div className="flex gap-4 items-center">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
-                      <MapPin className="h-5 w-5" />
+                      <MapPin className="h-4.5 w-4.5" />
                     </div>
                     <div>
-                      <h4 className="text-xs font-semibold text-muted-foreground uppercase">Location Headquarters</h4>
-                      <p className="text-sm font-bold text-foreground mt-0.5">San Francisco, California</p>
+                      <h4 className="text-[10px] font-bold text-muted-foreground uppercase">Corporate HQ</h4>
+                      <p className="text-xs font-bold text-foreground mt-0.5">San Francisco, California</p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-border p-6 bg-gradient-to-br from-primary/5 to-accent/5 shadow-sm text-left">
-                <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4 text-accent" />
-                  Are you a developer?
+              <div className="rounded-2xl border border-border bg-gradient-to-br from-primary/5 to-accent/5 p-6 text-left">
+                <h4 className="text-xs font-bold text-foreground flex items-center gap-2">
+                  <AlertCircle className="h-4.5 w-4.5 text-accent" />
+                  Developer Submissions
                 </h4>
-                <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                  If you have found a rendering bug or want to submit custom template layouts, submit a pull request on our GitHub repository.
+                <p className="text-xs text-muted-foreground mt-2 leading-relaxed font-medium">
+                  Have found a layout parsing bug or want to submit design presets? Submit an issue on our GitHub repository.
                 </p>
               </div>
             </div>
 
-            {/* Right Side: Interactive Form Container */}
-            <div className="lg:col-span-7 rounded-2xl border border-border bg-card/60 p-6 sm:p-8 shadow-xl backdrop-blur-md">
+            {/* Right Side: Contact Form Card */}
+            <div className="lg:col-span-7 rounded-2xl border border-border bg-card/65 p-6 sm:p-8 shadow-xl backdrop-blur-md">
               <AnimatePresence mode="wait">
                 {!submitted ? (
                   <motion.form
@@ -180,92 +169,92 @@ export default function ContactPage() {
                   >
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
-                        <label htmlFor="name" className="text-xs font-semibold text-muted-foreground">Your Name</label>
+                        <label htmlFor="name" className="text-xs font-bold text-muted-foreground">Your Name</label>
                         <input
                           id="name"
                           type="text"
-                          placeholder="Linus Torvalds"
+                          placeholder="Grace Hopper"
                           disabled={localLoading}
                           className={cn(
-                            "w-full rounded-lg border border-border bg-background px-3.5 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/45 focus:border-primary disabled:opacity-50",
+                            "w-full rounded-xl border border-border/80 bg-background px-4 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/45 disabled:opacity-50",
                             errors.name && "border-destructive focus:ring-destructive/30"
                           )}
                           {...register("name")}
                         />
                         {errors.name && (
-                          <p className="text-xs font-medium text-destructive">{errors.name.message}</p>
+                          <p className="text-[10px] text-destructive mt-0.5">{errors.name.message}</p>
                         )}
                       </div>
 
                       <div className="space-y-1.5">
-                        <label htmlFor="email" className="text-xs font-semibold text-muted-foreground">Email Address</label>
+                        <label htmlFor="email" className="text-xs font-bold text-muted-foreground">Email Address</label>
                         <input
                           id="email"
                           type="email"
-                          placeholder="linus@git.org"
+                          placeholder="grace@hopper.org"
                           disabled={localLoading}
                           className={cn(
-                            "w-full rounded-lg border border-border bg-background px-3.5 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/45 focus:border-primary disabled:opacity-50",
+                            "w-full rounded-xl border border-border/80 bg-background px-4 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/45 disabled:opacity-50",
                             errors.email && "border-destructive focus:ring-destructive/30"
                           )}
                           {...register("email")}
                         />
                         {errors.email && (
-                          <p className="text-xs font-medium text-destructive">{errors.email.message}</p>
+                          <p className="text-[10px] text-destructive mt-0.5">{errors.email.message}</p>
                         )}
                       </div>
                     </div>
 
                     <div className="space-y-1.5">
-                      <label htmlFor="subject" className="text-xs font-semibold text-muted-foreground">Message Subject</label>
+                      <label htmlFor="subject" className="text-xs font-bold text-muted-foreground">Subject</label>
                       <input
                         id="subject"
                         type="text"
-                        placeholder="Inquiry about API pricing tier integrations"
+                        placeholder="Inquiry about custom DNS configuration setup"
                         disabled={localLoading}
                         className={cn(
-                          "w-full rounded-lg border border-border bg-background px-3.5 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/45 focus:border-primary disabled:opacity-50",
+                          "w-full rounded-xl border border-border/80 bg-background px-4 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/45 disabled:opacity-50",
                           errors.subject && "border-destructive focus:ring-destructive/30"
                         )}
                         {...register("subject")}
                       />
                       {errors.subject && (
-                        <p className="text-xs font-medium text-destructive">{errors.subject.message}</p>
+                        <p className="text-[10px] text-destructive mt-0.5">{errors.subject.message}</p>
                       )}
                     </div>
 
                     <div className="space-y-1.5">
-                      <label htmlFor="message" className="text-xs font-semibold text-muted-foreground">Message Details</label>
+                      <label htmlFor="message" className="text-xs font-bold text-muted-foreground">Message</label>
                       <textarea
                         id="message"
                         rows={5}
-                        placeholder="Describe the details of your inquiry here..."
+                        placeholder="Please details the inquiries you have..."
                         disabled={localLoading}
                         className={cn(
-                          "w-full rounded-lg border border-border bg-background px-3.5 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/45 focus:border-primary disabled:opacity-50 resize-none",
+                          "w-full rounded-xl border border-border/80 bg-background px-4 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/45 disabled:opacity-50 resize-none",
                           errors.message && "border-destructive focus:ring-destructive/30"
                         )}
                         {...register("message")}
                       />
                       {errors.message && (
-                        <p className="text-xs font-medium text-destructive">{errors.message.message}</p>
+                        <p className="text-[10px] text-destructive mt-0.5">{errors.message.message}</p>
                       )}
                     </div>
 
                     <button
                       type="submit"
                       disabled={localLoading}
-                      className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/95 transition-all disabled:opacity-50 mt-4"
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-xs font-bold text-primary-foreground shadow hover:bg-primary/95 transition-all disabled:opacity-50 mt-4 cursor-pointer"
                     >
                       {localLoading ? (
                         <>
                           <Loader2 className="h-4 w-4 animate-spin" />
-                          Sending Message...
+                          Sending Inquiry...
                         </>
                       ) : (
                         <>
                           <Send className="h-4 w-4" />
-                          Send Message Ticket
+                          Send Support Ticket
                         </>
                       )}
                     </button>
@@ -277,16 +266,16 @@ export default function ContactPage() {
                     animate={{ opacity: 1, scale: 1 }}
                     className="flex flex-col items-center justify-center text-center py-10 space-y-4"
                   >
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-green-500/10 text-green-500">
-                      <CheckCircle className="h-8 w-8" />
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-500/10 text-green-500 border border-green-500/20">
+                      <CheckCircle className="h-6 w-6" />
                     </div>
-                    <h3 className="text-xl font-bold text-foreground">Message Sent Successfully</h3>
-                    <p className="text-sm text-muted-foreground max-w-sm leading-relaxed">
-                      Thank you for contacting us. Your ticket has been registered in our database system and a support engineer will review it shortly.
+                    <h3 className="text-sm font-bold text-foreground">Ticket Created</h3>
+                    <p className="text-xs text-muted-foreground max-w-sm leading-relaxed">
+                      Thank you! Your inquiry has been logged in our database system and a support engineer will review it shortly.
                     </p>
                     <button
                       onClick={() => setSubmitted(false)}
-                      className="mt-2 rounded-lg bg-secondary px-5 py-2 text-xs font-semibold text-foreground hover:bg-muted border border-border transition-colors"
+                      className="mt-2 rounded-xl bg-secondary px-5 py-2.5 text-xs font-bold text-foreground hover:bg-muted border border-border/80 transition-colors cursor-pointer"
                     >
                       Submit Another Ticket
                     </button>
