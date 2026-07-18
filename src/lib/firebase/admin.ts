@@ -13,11 +13,6 @@ const initAdmin = () => {
   let privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
   if (!projectId || !clientEmail || !privateKey) {
-    if (process.env.NODE_ENV === "production") {
-      throw new Error(
-        "Critical error: Firebase Admin credentials are not set in environment variables."
-      );
-    }
     console.warn(
       "Firebase Admin credentials are not set. Server-side Firebase operations will fail."
     );

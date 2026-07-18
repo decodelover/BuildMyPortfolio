@@ -8,10 +8,12 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase/firestore";
+import { createWebsiteGenerationPlan } from "@/lib/ai/website-architect";
 
 export function WizardNavigation() {
   const router = useRouter();
   const {
+    builderId,
     userId,
     currentStep,
     completedSteps,
@@ -23,6 +25,7 @@ export function WizardNavigation() {
     saveBuilderDraft,
     completeBuilderDraft,
     validationState,
+    aiBlueprint,
   } = useWebsiteBuilderStore();
 
   const isFirstStep = currentStep === 1;
@@ -59,21 +62,37 @@ export function WizardNavigation() {
   };
 
   const handleFinalize = async () => {
-    if (!userId) return;
+    if (!userId || !builderId) return;
 
     // Check if at least some steps are completed
     if (completedSteps.length < 5) {
       toast.warning("We recommend completing more sections before generating your website layout, but you can proceed.");
     }
 
-    toast.info("Scaffolding your portfolio layout...", { duration: 3000 });
+    toast.info("Scaffolding your portfolio layout and architect plan...", { duration: 3000 });
 
     try {
       // 1. Force final save of the wizard draft
       await saveBuilderDraft(true);
       await completeBuilderDraft();
 
-      // 2. Add document to Firestore 'portfolios' collection (connecting the wizard result to live portfolios)
+      // 2. Generate Website Architect Plan deterministically
+      const architectResult = await createWebsiteGenerationPlan({
+        builderId,
+        userId,
+        websiteData,
+        aiBlueprint,
+      });
+
+      const { planId, validationResult } = architectResult;
+
+      if (!validationResult.isValid) {
+        toast.warning(`Architect plan generated with ${validationResult.errors.length} validation issues. Status: draft.`);
+      } else if (validationResult.warnings.length > 0) {
+        toast.info(`Architect plan generated with ${validationResult.warnings.length} suggestions.`);
+      }
+
+      // 3. Add document to Firestore 'portfolios' collection (connecting the wizard result & plan to live portfolios)
       const personalInfo = websiteData.personalInfo || {};
       const portfolioTitle = personalInfo.fullName 
         ? `${personalInfo.fullName}'s Professional Website`
@@ -83,15 +102,16 @@ export function WizardNavigation() {
         userId,
         name: portfolioTitle,
         theme: websiteData.websitePreferences?.theme || "minimalist",
-        profession: personalInfo.title || "Technology Professional",
+        profession: personalInfo.profession || "Technology Professional",
         status: "draft",
         domain: `${portfolioTitle.toLowerCase().replace(/[^a-z0-9]/g, "")}-${Math.floor(1000 + Math.random() * 9000)}.buildmyportfolio.com`,
+        planId, // Attach the newly generated Architect Plan ID!
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         wizardData: websiteData, // Copy wizard details over
       });
 
-      toast.success("AI Developer portfolio generated successfully!");
+      toast.success("AI Developer portfolio and Architect Plan generated successfully!");
       router.push("/dashboard/portfolios");
     } catch (err) {
       console.error("AI Portfolio generation failure:", err);

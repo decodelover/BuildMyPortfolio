@@ -11,6 +11,7 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/firestore";
+import { AIBlueprint } from "@/lib/ai/types";
 
 export type DraftStatus = "draft" | "archived" | "completed" | "published";
 export type AutosaveStatus = "saved" | "saving" | "offline" | "error";
@@ -28,6 +29,9 @@ export interface WebsiteBuilderState {
   loading: boolean;
   error: string | null;
   websiteData: Record<string, any>;
+  aiBlueprint: AIBlueprint | null;
+  blueprintLoading: boolean;
+  blueprintError: string | null;
 
   // Actions
   setCurrentStep: (step: number) => Promise<void>;
@@ -41,6 +45,9 @@ export interface WebsiteBuilderState {
   saveBuilderDraft: (forced?: boolean) => Promise<void>;
   archiveBuilderDraft: () => Promise<void>;
   completeBuilderDraft: () => Promise<void>;
+  setAIBlueprint: (blueprint: AIBlueprint | null) => void;
+  setBlueprintLoading: (loading: boolean) => void;
+  setBlueprintError: (error: string | null) => void;
   resetStore: () => void;
 }
 
@@ -79,6 +86,9 @@ export const useWebsiteBuilderStore = create<WebsiteBuilderState>((set, get) => 
   loading: false,
   error: null,
   websiteData: {},
+  aiBlueprint: null,
+  blueprintLoading: false,
+  blueprintError: null,
 
   setCurrentStep: async (step) => {
     if (step < 1 || step > TOTAL_STEPS) return;
@@ -208,6 +218,7 @@ export const useWebsiteBuilderStore = create<WebsiteBuilderState>((set, get) => 
           draftStatus: activeDraft.status || "draft",
           completionPercentage: pct,
           websiteData: activeDraft.websiteData || {},
+          aiBlueprint: activeDraft.aiBlueprint || null,
           unsavedChanges: false,
           autosaveState: "saved",
           loading: false,
@@ -327,6 +338,10 @@ export const useWebsiteBuilderStore = create<WebsiteBuilderState>((set, get) => 
     }
   },
 
+  setAIBlueprint: (blueprint) => set({ aiBlueprint: blueprint }),
+  setBlueprintLoading: (loading) => set({ blueprintLoading: loading }),
+  setBlueprintError: (error) => set({ blueprintError: error }),
+
   resetStore: () => {
     if (saveTimeout) clearTimeout(saveTimeout);
     set({
@@ -342,6 +357,9 @@ export const useWebsiteBuilderStore = create<WebsiteBuilderState>((set, get) => 
       loading: false,
       error: null,
       websiteData: {},
+      aiBlueprint: null,
+      blueprintLoading: false,
+      blueprintError: null,
     });
   },
 }));
