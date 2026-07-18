@@ -1,12 +1,12 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || (process.env.NODE_ENV === "development" || typeof window === "undefined" ? "AIzaSyFakeKeyForLocalBuildAndDevelopment" : undefined),
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || (process.env.NODE_ENV === "development" || typeof window === "undefined" ? "mock-project.firebaseapp.com" : undefined),
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || (process.env.NODE_ENV === "development" || typeof window === "undefined" ? "mock-project" : undefined),
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || (process.env.NODE_ENV === "development" || typeof window === "undefined" ? "mock-project.appspot.com" : undefined),
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || (process.env.NODE_ENV === "development" || typeof window === "undefined" ? "000000000000" : undefined),
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || (process.env.NODE_ENV === "development" || typeof window === "undefined" ? "1:000000000000:web:0000000000000000000000" : undefined),
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyFakeKeyForLocalBuildAndDevelopment",
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "mock-project.firebaseapp.com",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "mock-project",
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "mock-project.appspot.com",
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "000000000000",
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:989064114043:web:17b3f7671b9e446bd317de",
 };
 
 // Strict environment variables validation
