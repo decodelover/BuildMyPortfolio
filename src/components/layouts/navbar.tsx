@@ -20,14 +20,12 @@ export default function Navbar() {
     setMounted(true);
   }, []);
 
-  const navLinks = [
+  const navLinks: { label: string; href: string; badge?: string }[] = [
     { label: "Features", href: "/features" },
-    { label: "Templates", href: "/templates" },
     { label: "Showcase", href: "/showcase" },
     { label: "Pricing", href: "/pricing" },
     { label: "About", href: "/about" },
     { label: "FAQ", href: "/faq" },
-    { label: "Blog", href: "#", badge: "Soon" },
     { label: "Contact", href: "/contact" },
   ];
 
