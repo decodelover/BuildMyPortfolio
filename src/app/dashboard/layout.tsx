@@ -68,9 +68,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       where("userId", "==", user.uid),
       where("isRead", "==", false)
     );
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      setUnreadNotifications(snapshot.size);
-    });
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        setUnreadNotifications(snapshot.size);
+      },
+      (error) => {
+        console.warn("Notifications listener error (index may be building):", error.message);
+        setUnreadNotifications(0);
+      }
+    );
     return () => unsubscribe();
   }, [user]);
 
