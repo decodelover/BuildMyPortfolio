@@ -7,9 +7,25 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { Loader2, User, Mail, Shield, Globe, Image as ImageIcon } from "lucide-react";
+import { Loader2, User, Mail, Shield, Globe, Image as ImageIcon, MapPin, Briefcase } from "lucide-react";
 import { uploadUserFile } from "@/lib/firebase/storage";
 import { cn } from "@/lib/utils";
+
+const profileSchema = z.object({
+  fullName: z.string().min(1, "Full name is required.").min(3, "Name must be at least 3 characters."),
+  username: z.string().min(1, "Username is required.").min(3, "Username must be at least 3 characters.").regex(/^[a-zA-Z0-9_]+$/, "Username can only contain alphanumeric characters and underscores."),
+  profession: z.string().nullable().optional(),
+  bio: z.string().max(250, "Bio cannot exceed 250 characters.").nullable().optional(),
+  country: z.string().nullable().optional(),
+  socialLinks: z.object({
+    github: z.string().url("Must be a valid URL").or(z.literal("")).optional(),
+    twitter: z.string().url("Must be a valid URL").or(z.literal("")).optional(),
+    linkedin: z.string().url("Must be a valid URL").or(z.literal("")).optional(),
+    website: z.string().url("Must be a valid URL").or(z.literal("")).optional(),
+  }).optional(),
+});
+
+type ProfileFormValues = z.infer<typeof profileSchema>;
 
 function GithubIcon({ className }: { className?: string }) {
   return (
@@ -35,22 +51,6 @@ function LinkedinIcon({ className }: { className?: string }) {
   );
 }
 
-const profileSchema = z.object({
-  fullName: z.string().min(1, "Full name is required.").min(3, "Name must be at least 3 characters."),
-  username: z.string().min(1, "Username is required.").min(3, "Username must be at least 3 characters.").regex(/^[a-zA-Z0-9_]+$/, "Username can only contain alphanumeric characters and underscores."),
-  profession: z.string().nullable().optional(),
-  bio: z.string().max(250, "Bio cannot exceed 250 characters.").nullable().optional(),
-  country: z.string().nullable().optional(),
-  socialLinks: z.object({
-    github: z.string().url("Must be a valid URL").or(z.literal("")).optional(),
-    twitter: z.string().url("Must be a valid URL").or(z.literal("")).optional(),
-    linkedin: z.string().url("Must be a valid URL").or(z.literal("")).optional(),
-    website: z.string().url("Must be a valid URL").or(z.literal("")).optional(),
-  }).optional(),
-});
-
-type ProfileFormValues = z.infer<typeof profileSchema>;
-
 export default function ProfilePage() {
   const { user, updateUser } = useAuthStore();
   const [saving, setSaving] = useState(false);
@@ -60,6 +60,7 @@ export default function ProfilePage() {
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -77,6 +78,17 @@ export default function ProfilePage() {
       },
     },
   });
+
+  // Watch fields dynamically to render the public card preview widget
+  const watchName = watch("fullName");
+  const watchUsername = watch("username");
+  const watchProfession = watch("profession");
+  const watchBio = watch("bio");
+  const watchCountry = watch("country");
+  const watchGithub = watch("socialLinks.github");
+  const watchTwitter = watch("socialLinks.twitter");
+  const watchLinkedin = watch("socialLinks.linkedin");
+  const watchWebsite = watch("socialLinks.website");
 
   // Populate form values when user details load
   useEffect(() => {
@@ -97,7 +109,6 @@ export default function ProfilePage() {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
-    // Validate type and size (max 3MB)
     if (!file.type.startsWith("image/")) {
       toast.error("Please upload an image file.");
       return;
@@ -146,54 +157,105 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="space-y-8 text-left max-w-4xl">
+    <div className="space-y-8 text-left max-w-7xl mx-auto">
       <div className="space-y-1">
-        <h1 className="text-2xl font-extrabold tracking-tight">Profile Details</h1>
-        <p className="text-sm text-muted-foreground">Manage your developer profile settings and social links.</p>
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Profile Settings</h1>
+        <p className="text-sm text-muted-foreground font-medium">Manage your developer profile settings and social links.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
-        {/* Left Side: Avatar selector card */}
-        <div className="lg:col-span-4 rounded-2xl border border-border bg-card p-6 flex flex-col items-center justify-center text-center shadow-sm h-fit space-y-6">
-          <div className="relative h-28 w-28 rounded-full border-2 border-border overflow-hidden bg-secondary flex items-center justify-center group shadow-md">
-            {user?.photoURL ? (
-              <img src={user.photoURL} alt="Avatar" className="h-full w-full object-cover" />
-            ) : (
-              <User className="h-10 w-10 text-muted-foreground" />
-            )}
-            
-            {/* Upload Spinner overlay */}
-            {uploading && (
-              <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                <Loader2 className="h-6 w-6 text-white animate-spin" />
+        {/* Left Side: Avatar selector card & Live Card Preview */}
+        <div className="lg:col-span-4 space-y-6">
+          
+          {/* Avatar Upload Panel */}
+          <div className="rounded-2xl border border-border bg-card p-6 flex flex-col items-center justify-center text-center shadow-sm space-y-6">
+            <div className="relative h-28 w-28 rounded-full border-2 border-border overflow-hidden bg-secondary flex items-center justify-center group shadow-md">
+              {user?.photoURL ? (
+                <img src={user.photoURL} alt="Avatar" className="h-full w-full object-cover" />
+              ) : (
+                <User className="h-10 w-10 text-muted-foreground" />
+              )}
+              
+              {uploading && (
+                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                  <Loader2 className="h-6 w-6 text-white animate-spin" />
+                </div>
+              )}
+
+              {!uploading && (
+                <label className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-[10px] text-white font-semibold cursor-pointer transition-opacity">
+                  <ImageIcon className="h-4 w-4 mb-1" />
+                  Change Photo
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    className="hidden"
+                  />
+                </label>
+              )}
+            </div>
+
+            <div className="space-y-1">
+              <h4 className="text-sm font-extrabold text-foreground truncate max-w-[180px]">{user?.fullName}</h4>
+              <p className="text-xs text-muted-foreground font-mono truncate max-w-[180px]">@{user?.username}</p>
+            </div>
+          </div>
+
+          {/* Interactive Live Card Preview Widget */}
+          <div className="rounded-2xl border border-border bg-gradient-to-tr from-card to-secondary/35 p-6 shadow-sm space-y-4">
+            <div className="flex justify-between items-center border-b border-border pb-2 text-xs font-bold text-muted-foreground">
+              <span>LIVE CARD PREVIEW</span>
+              <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex gap-4 items-center">
+                <div className="h-12 w-12 rounded-full bg-secondary border border-border overflow-hidden shrink-0">
+                  {user?.photoURL ? (
+                    <img src={user.photoURL} alt="Preview Avatar" className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="h-full w-full flex items-center justify-center"><User className="h-5 w-5 text-muted-foreground" /></div>
+                  )}
+                </div>
+                <div className="text-left space-y-0.5 overflow-hidden">
+                  <h4 className="font-extrabold text-foreground text-xs truncate">{watchName || "Your Name"}</h4>
+                  <p className="text-[10px] text-muted-foreground font-mono truncate">@{watchUsername || "username"}</p>
+                </div>
               </div>
-            )}
 
-            {/* Hover visual label overlay */}
-            {!uploading && (
-              <label className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-[10px] text-white font-semibold cursor-pointer transition-opacity">
-                <ImageIcon className="h-4 w-4 mb-1" />
-                Change Photo
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAvatarChange}
-                  className="hidden"
-                />
-              </label>
-            )}
+              {/* Dynamic Job Title & Country */}
+              <div className="space-y-2 text-[10px] text-muted-foreground text-left font-semibold">
+                {watchProfession && (
+                  <div className="flex items-center gap-1.5">
+                    <Briefcase className="h-3.5 w-3.5 text-primary shrink-0" />
+                    <span className="truncate">{watchProfession}</span>
+                  </div>
+                )}
+                {watchCountry && (
+                  <div className="flex items-center gap-1.5">
+                    <MapPin className="h-3.5 w-3.5 text-accent shrink-0" />
+                    <span className="truncate">{watchCountry}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Bio block */}
+              <p className="text-[11px] text-muted-foreground leading-relaxed text-left border-t border-border/60 pt-2.5">
+                {watchBio || "Select edit fields on the right to customize details."}
+              </p>
+
+              {/* Highlight active social links */}
+              <div className="flex gap-2.5 pt-1 text-muted-foreground">
+                {watchGithub && <GithubIcon className="h-4.5 w-4.5 text-foreground transition-colors" />}
+                {watchLinkedin && <LinkedinIcon className="h-4.5 w-4.5 text-foreground transition-colors" />}
+                {watchTwitter && <TwitterIcon className="h-4.5 w-4.5 text-foreground transition-colors" />}
+                {watchWebsite && <Globe className="h-4.5 w-4.5 text-foreground transition-colors" />}
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-1">
-            <h4 className="text-sm font-bold text-foreground truncate max-w-[180px]">{user?.fullName}</h4>
-            <p className="text-xs text-muted-foreground font-mono truncate max-w-[180px]">@{user?.username}</p>
-          </div>
-
-          <div className="border-t border-border w-full pt-4 text-xs text-muted-foreground flex justify-between">
-            <span>Email</span>
-            <span className="font-semibold text-foreground truncate max-w-[120px]">{user?.email}</span>
-          </div>
         </div>
 
         {/* Right Side: Interactive edit forms container */}
@@ -275,7 +337,6 @@ export default function ProfilePage() {
               )}
             </div>
 
-            {/* Social settings segment */}
             <div className="border-t border-border pt-4 space-y-3">
               <h3 className="text-sm font-bold text-foreground">Social Settings</h3>
 
@@ -351,7 +412,7 @@ export default function ProfilePage() {
             <button
               type="submit"
               disabled={saving}
-              className="flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/95 transition-all disabled:opacity-50 mt-4 ml-auto"
+              className="flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/95 transition-all disabled:opacity-50 mt-4 ml-auto cursor-pointer"
             >
               {saving ? (
                 <>
