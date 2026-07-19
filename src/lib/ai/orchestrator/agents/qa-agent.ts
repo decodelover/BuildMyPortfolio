@@ -1,6 +1,7 @@
 import { IAgent } from "../agent-interface";
 import { AgentId, AgentInput, AgentOutput, AgentValidationResult } from "../types";
 import { GenerationContext } from "../generation-context";
+import { QaPipeline } from "../../qa-agent/pipeline/qa-pipeline";
 
 export class QAAgent implements IAgent {
   public readonly id: AgentId = "qa";
@@ -9,33 +10,73 @@ export class QAAgent implements IAgent {
   public readonly dependencies: AgentId[] = ["content", "design", "seo"];
 
   public validate(input: AgentInput): AgentValidationResult {
+    const errors: string[] = [];
+    if (!input.websiteData) {
+      errors.push("Missing websiteData inputs in generation pipeline.");
+    }
     return {
-      isValid: true,
-      errors: []
+      isValid: errors.length === 0,
+      errors
     };
   }
 
   public async execute(input: AgentInput, context: GenerationContext): Promise<AgentOutput> {
-    const contentOut = context.getAgentOutput("content");
-    const designOut = context.getAgentOutput("design");
-    const seoOut = context.getAgentOutput("seo");
+    const contentOut = context.getAgentOutput<any>("content");
+    const designOut = context.getAgentOutput<any>("design");
+    const seoOut = context.getAgentOutput<any>("seo");
 
-    const auditChecks = [
-      { id: "qa-001", rule: "Hero copy contains primary tagline", status: "passed" },
-      { id: "qa-002", rule: "Services mapping is complete and has descriptions", status: "passed" },
-      { id: "qa-003", rule: "Mobile column layouts are configured and responsive", status: "passed" },
-      { id: "qa-004", rule: "SEO metadata Default description is present", status: "passed" }
-    ];
+    const pipeline = new QaPipeline();
 
-    return {
-      agentId: this.id,
-      success: true,
-      data: {
-        auditChecks,
-        overallQualityScore: 97,
-        warnings: ["Some service elements do not have explicit custom prices, falling back to 'Contact for Quote'."],
-        passed: true
+    try {
+      const report = await pipeline.run(
+        input.userId,
+        input.builderId,
+        input.planId,
+        input.websiteData,
+        [], // contentBlocks
+        designOut,
+        seoOut
+      );
+
+      const auditChecks = report.issues.map((iss) => ({
+        id: iss.id,
+        rule: iss.rule,
+        status: iss.severity === "critical" || iss.severity === "high" ? "failed" : "passed",
+        category: iss.category,
+        message: iss.message,
+        recommendation: iss.recommendation
+      }));
+
+      // Add a default positive check if no critical issues found to ensure validation has feedback
+      if (auditChecks.length === 0) {
+        auditChecks.push({
+          id: "qa-pass-all",
+          rule: "all-quality-standards",
+          status: "passed",
+          category: "content",
+          message: "All validation constraints met successfully.",
+          recommendation: "Ready for portfolio compilation."
+        });
       }
-    };
+
+      return {
+        agentId: this.id,
+        success: true,
+        data: {
+          auditChecks,
+          overallQualityScore: report.scores.overall,
+          warnings: report.warnings,
+          passed: report.passFailStatus === "pass",
+          reportId: report.reportId
+        }
+      };
+    } catch (err: any) {
+      return {
+        agentId: this.id,
+        success: false,
+        data: {},
+        error: err.message || "Quality Assurance Agent pipeline run failed."
+      };
+    }
   }
 }
