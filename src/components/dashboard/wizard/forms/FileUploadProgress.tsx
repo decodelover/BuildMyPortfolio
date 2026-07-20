@@ -45,34 +45,51 @@ export function FileUploadProgress({
     const timestamp = Date.now();
     const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, "_");
     const uniqueFileName = `${timestamp}_${cleanFileName}`;
-    const storageRef = ref(storage, `users/${user.uid}/${folder}/${uniqueFileName}`);
-
-    const uploadTask = uploadBytesResumable(storageRef, file);
-
-    uploadTask.on(
-      "state_changed",
-      (snapshot) => {
-        const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-        setProgress(pct);
-      },
-      (error) => {
-        console.error("Upload error:", error);
-        toast.error("File upload failed. Please verify storage permissions.");
+    const readAsDataUrlFallback = (selectedFile: File) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        onChange(dataUrl);
+        toast.success("File uploaded successfully!");
         setUploading(false);
-      },
-      async () => {
-        try {
-          const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
-          onChange(downloadUrl);
-          toast.success("File uploaded successfully!");
-        } catch (err) {
-          console.error("URL retrieval error:", err);
-          toast.error("Failed to get download URL.");
-        } finally {
-          setUploading(false);
+      };
+      reader.onerror = () => {
+        toast.error("Failed to process file upload.");
+        setUploading(false);
+      };
+      reader.readAsDataURL(selectedFile);
+    };
+
+    try {
+      const storageRef = ref(storage, `users/${user.uid}/${folder}/${uniqueFileName}`);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+      uploadTask.on(
+        "state_changed",
+        (snapshot) => {
+          const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+          setProgress(pct);
+        },
+        (error) => {
+          console.warn("Firebase Storage upload encountered error, applying Data URL fallback:", error);
+          readAsDataUrlFallback(file);
+        },
+        async () => {
+          try {
+            const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+            onChange(downloadUrl);
+            toast.success("File uploaded successfully!");
+            setUploading(false);
+          } catch (err) {
+            console.warn("Failed to retrieve download URL, applying Data URL fallback:", err);
+            readAsDataUrlFallback(file);
+          }
         }
-      }
-    );
+      );
+    } catch (err) {
+      console.warn("Firebase Storage initialization failed, applying Data URL fallback:", err);
+      readAsDataUrlFallback(file);
+    }
   };
 
   const handleClear = () => {

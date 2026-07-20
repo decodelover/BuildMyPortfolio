@@ -2,6 +2,9 @@ import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "fire
 import { app } from "./firebase";
 
 export const storage = getStorage(app);
+// Limit Firebase Storage retry timeout to 10s to prevent storage/retry-limit-exceeded infinite loops
+storage.maxUploadRetryTime = 10000;
+storage.maxOperationRetryTime = 10000;
 
 /**
  * Uploads a file to Firebase Storage under a user-specific folder path.
