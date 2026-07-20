@@ -1,3 +1,7 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Agent Identifiers & Statuses (Existing Backward Compatible)
+// ─────────────────────────────────────────────────────────────────────────────
+
 export type AgentId = "content" | "design" | "seo" | "qa" | "compiler";
 
 export type AgentStatus = "idle" | "running" | "completed" | "failed" | "skipped";
@@ -54,7 +58,6 @@ export interface GenerationJob {
   updatedAt: string;
 }
 
-// Final compiled output manifest for site renderer
 export interface WebsiteManifest {
   manifestId: string;
   userId: string;
@@ -114,4 +117,128 @@ export interface AgentOutput {
   success: boolean;
   data: Record<string, any>;
   error?: string;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Workflow Identifiers & Types (Step 9D Expansion)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type WorkflowType =
+  | "portfolio-generation"
+  | "portfolio-update"
+  | "portfolio-regeneration"
+  | "theme-change"
+  | "seo-refresh"
+  | "content-refresh";
+
+export type TaskStatus = "pending" | "scheduled" | "running" | "completed" | "failed" | "skipped";
+
+export interface TaskDefinition {
+  id: string;
+  name: string;
+  agentId: AgentId;
+  dependencies: string[];
+  priority: number;
+  timeoutMs: number;
+  allowParallel: boolean;
+}
+
+export interface WorkflowDefinition {
+  workflowId: WorkflowType;
+  name: string;
+  description: string;
+  version: string;
+  tasks: TaskDefinition[];
+}
+
+export interface ExecutionStage {
+  stageIndex: number;
+  stageName: string;
+  tasks: TaskDefinition[];
+  isParallel: boolean;
+}
+
+export interface ExecutionPlan {
+  workflowId: WorkflowType;
+  executionId: string;
+  stages: ExecutionStage[];
+  totalTasksCount: number;
+}
+
+export interface CheckpointData {
+  checkpointId: string;
+  timestamp: string;
+  completedTaskIds: string[];
+  outputs: Record<string, any>;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Event Bus Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type WorkflowEventType =
+  | "workflow:started"
+  | "stage:started"
+  | "stage:completed"
+  | "task:started"
+  | "task:completed"
+  | "task:failed"
+  | "task:retrying"
+  | "progress:updated"
+  | "checkpoint:saved"
+  | "workflow:completed"
+  | "workflow:failed";
+
+export interface WorkflowEvent {
+  type: WorkflowEventType;
+  workflowId: WorkflowType;
+  executionId: string;
+  timestamp: string;
+  taskId?: string;
+  agentId?: AgentId;
+  progress?: number;
+  message?: string;
+  data?: Record<string, any>;
+  error?: string;
+}
+
+export type WorkflowEventListener = (event: WorkflowEvent) => void;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Execution Metrics & Final Workflow Result
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface TaskExecutionMetric {
+  taskId: string;
+  agentId: AgentId;
+  durationMs: number;
+  attempts: number;
+  status: TaskStatus;
+}
+
+export interface WorkflowExecutionMetrics {
+  totalDurationMs: number;
+  taskMetrics: TaskExecutionMetric[];
+  parallelStagesCount: number;
+  serialStagesCount: number;
+  totalTokensProcessed: number;
+  totalEstimatedCostUsd: number;
+  peakMemoryMb: number;
+}
+
+export interface WorkflowResult {
+  workflowId: WorkflowType;
+  executionId: string;
+  success: boolean;
+  completedTasks: string[];
+  skippedTasks: string[];
+  warnings: string[];
+  errors: string[];
+  executionTimeMs: number;
+  metrics: WorkflowExecutionMetrics;
+  blueprint?: any;
+  manifest?: WebsiteManifest;
+  metadata: Record<string, any>;
+  version: string;
+  timestamp: string;
 }

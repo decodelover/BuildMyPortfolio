@@ -60,7 +60,7 @@ export class AgentRegistry {
       }
     };
 
-    for (const agentId of this.agents.keys()) {
+    for (const agentId of Array.from(this.agents.keys())) {
       if (!visited.has(agentId)) {
         visit(agentId);
       }

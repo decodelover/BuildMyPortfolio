@@ -1,4 +1,4 @@
-import { db } from "@/lib/firebase/firestore";
+import { db } from "../../firebase/firestore";
 import { doc, setDoc, updateDoc, getDoc, arrayUnion } from "firebase/firestore";
 import { GenerationJob, JobStatus, AgentId, AgentStatus, GenerationLogEntry, AgentState } from "./types";
 

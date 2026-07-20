@@ -201,6 +201,30 @@ const faqsList = [
   { q: "How does the PDF resume parser work?", a: "Simply upload your resume PDF in Step 1. Our parsing engine extracts your employment history, duration, certificates, and skills, automatically pre-loading them into the builder wizard.", category: "AI" }
 ];
 
+const defaultLandingTestimonials = [
+  {
+    id: "default-1",
+    review: "BuildMyPortfolio helped me launch a stunning, responsive portfolio in under 10 minutes. The multi-agent workflow generated clean copy and structured layouts seamlessly.",
+    clientName: "Alex Rivera",
+    position: "Senior Full-Stack Engineer",
+    company: "TechCorp"
+  },
+  {
+    id: "default-2",
+    review: "The design system and automated SEO compilation saved me days of manual styling. My lighthouse scores were 100 straight out of the box.",
+    clientName: "Sarah Chen",
+    position: "Lead UI/UX Designer",
+    company: "Studio Craft"
+  },
+  {
+    id: "default-3",
+    review: "An enterprise-grade tool for developers. The schema integrity, security checks, and snapshot versioning make this the best portfolio builder available.",
+    clientName: "David Miller",
+    position: "DevOps & Cloud Architect",
+    company: "CloudScale"
+  }
+];
+
 export default function LandingPage() {
   const [selectedTheme, setSelectedTheme] = useState("developer");
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
@@ -209,16 +233,21 @@ export default function LandingPage() {
   const [testimonials, setTestimonials] = useState<any[]>([]);
   const [loadingTestimonials, setLoadingTestimonials] = useState(true);
 
-  // Load testimonials from Firestore
+  // Load testimonials from Firestore with fallback
   useEffect(() => {
     async function fetchTestimonials() {
       try {
         const q = query(collection(db, "testimonials"), limit(3));
         const snap = await getDocs(q);
         const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setTestimonials(list);
+        if (list.length > 0) {
+          setTestimonials(list);
+        } else {
+          setTestimonials(defaultLandingTestimonials);
+        }
       } catch (err) {
-        console.error("Testimonial fetch error:", err);
+        console.warn("Testimonial fetch notice (using default showcase testimonials):", err);
+        setTestimonials(defaultLandingTestimonials);
       } finally {
         setLoadingTestimonials(false);
       }

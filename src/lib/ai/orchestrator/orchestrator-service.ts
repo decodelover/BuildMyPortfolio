@@ -7,8 +7,8 @@ import { CompilerAgent } from "./agents/compiler-agent";
 import { JobLifecycleManager } from "./job-lifecycle";
 import { ManifestBuilder } from "./manifest-builder";
 import { StructuredLogger } from "./logger";
-import { GenerationContext } from "./generation-context";
-import { AgentId, AgentStatus, AgentState, RetryPolicy, AgentInput } from "./types";
+import { OrchestrationEngine } from "./engine/orchestration-engine";
+import { AgentId } from "./types";
 
 export interface OrchestrationParams {
   jobId: string;
@@ -26,7 +26,7 @@ export class OrchestratorService {
     if (this.initialized) return;
 
     const registry = AgentRegistry.getInstance();
-    registry.clear(); // Reset to prevent duplicates
+    registry.clear();
     registry.register(new ContentAgent());
     registry.register(new DesignAgent());
     registry.register(new SEOAgent());
@@ -43,144 +43,72 @@ export class OrchestratorService {
     const { jobId, userId, builderId, planId, websiteData, plan } = params;
     const logger = new StructuredLogger(jobId);
     
-    logger.info("Starting multi-agent portfolio generation process.", undefined, { userId, builderId, planId });
+    logger.info("Starting AI Orchestration Workflow.", undefined, { userId, builderId, planId });
 
     try {
-      // 1. Create or retrieve the job state
+      // 1. Create or retrieve the job state in Firestore
       await JobLifecycleManager.createJob(jobId, userId, builderId, planId);
       await JobLifecycleManager.updateJobStatus(jobId, "running", 5);
 
-      // 2. Setup shared mutable context
-      const context = new GenerationContext(userId, builderId, planId, websiteData, plan);
-
-      // 3. Resolve execution order
-      const registry = AgentRegistry.getInstance();
-      const executionOrder = registry.getExecutionOrder();
-      
-      logger.info(`Resolved topological agent execution sequence: ${executionOrder.join(" -> ")}`);
-
-      // 4. Run agents sequentially
-      let completedAgents = 0;
-      const totalAgents = executionOrder.length;
-
-      for (const agentId of executionOrder) {
-        const agent = registry.get(agentId);
-        if (!agent) {
-          throw new Error(`Failed to retrieve registered agent with ID: ${agentId}`);
-        }
-
-        logger.info(`Starting agent step: ${agent.name}`, agentId);
-        
-        const startTime = new Date().toISOString();
-        await JobLifecycleManager.updateAgentState(jobId, agentId, {
-          status: "running",
-          startedAt: startTime,
-          attempts: 1
-        });
-
-        // Set default retry policies
-        const retryPolicy: RetryPolicy = {
-          maxRetries: 3,
-          backoffMs: 1000
-        };
-
-        const agentInput: AgentInput = {
-          userId,
-          builderId,
-          planId,
-          websiteData,
-          plan
-        };
-
-        // 4.1 Validate agent inputs first
-        const validation = agent.validate(agentInput);
-        if (!validation.isValid) {
-          const validationError = `Agent input validation failed: ${validation.errors.join(", ")}`;
-          logger.error(validationError, agentId);
-          await JobLifecycleManager.updateAgentState(jobId, agentId, {
-            status: "failed",
-            completedAt: new Date().toISOString(),
-            error: validationError
-          });
-          throw new Error(validationError);
-        }
-
-        // 4.2 Execute agent with retries
-        let attempt = 0;
-        let success = false;
-        let lastError: any = null;
-        let agentOutput: any = null;
-
-        while (attempt < retryPolicy.maxRetries && !success) {
-          attempt++;
-          if (attempt > 1) {
-            logger.warn(`Retrying agent execution. Attempt ${attempt}/${retryPolicy.maxRetries}`, agentId);
-            await JobLifecycleManager.updateAgentState(jobId, agentId, {
-              attempts: attempt
-            });
-            // Backoff delay
-            await new Promise((resolve) => setTimeout(resolve, retryPolicy.backoffMs * Math.pow(2, attempt - 2)));
+      // 2. Delegate execution to Master OrchestrationEngine with real-time Firestore state listener
+      const workflowResult = await OrchestrationEngine.executeWorkflow({
+        workflowId: "portfolio-generation",
+        userId,
+        builderId,
+        planId,
+        websiteData,
+        plan,
+        onEvent: async (evt) => {
+          if (evt.progress) {
+            await JobLifecycleManager.updateJobStatus(jobId, "running", evt.progress);
           }
-
-          try {
-            agentOutput = await agent.execute(agentInput, context);
-            if (agentOutput && agentOutput.success) {
-              success = true;
-            } else {
-              lastError = agentOutput?.error || "Agent returned unsuccessful status code.";
+          if (evt.agentId) {
+            if (evt.type === "task:started") {
+              await JobLifecycleManager.updateAgentState(jobId, evt.agentId as AgentId, {
+                status: "running",
+                startedAt: evt.timestamp,
+                attempts: 1
+              });
+            } else if (evt.type === "task:completed") {
+              await JobLifecycleManager.updateAgentState(jobId, evt.agentId as AgentId, {
+                status: "completed",
+                completedAt: evt.timestamp
+              });
+            } else if (evt.type === "task:failed") {
+              await JobLifecycleManager.updateAgentState(jobId, evt.agentId as AgentId, {
+                status: "failed",
+                completedAt: evt.timestamp,
+                error: evt.error || "Agent task execution failed."
+              });
             }
-          } catch (err: any) {
-            lastError = err.message || err || "Unknown error during agent execution.";
           }
         }
+      });
 
-        const endTime = new Date().toISOString();
-
-        if (success && agentOutput) {
-          logger.info(`Agent step completed successfully.`, agentId);
-          context.setAgentOutput(agentId, agentOutput);
-          
-          await JobLifecycleManager.updateAgentState(jobId, agentId, {
-            status: "completed",
-            completedAt: endTime
-          });
-        } else {
-          logger.error(`Agent execution failed after ${attempt} attempts. Error: ${lastError}`, agentId);
-          
-          await JobLifecycleManager.updateAgentState(jobId, agentId, {
-            status: "failed",
-            completedAt: endTime,
-            error: String(lastError)
-          });
-          throw new Error(`Execution of agent '${agentId}' failed: ${lastError}`);
-        }
-
-        completedAgents++;
-        // Calculate progress dynamically (ranging from 10% to 90% during execution)
-        const currentProgress = 10 + Math.round((completedAgents / totalAgents) * 80);
-        await JobLifecycleManager.updateJobStatus(jobId, "running", currentProgress);
+      if (!workflowResult.success) {
+        const failureReason = workflowResult.errors.join("; ") || "Orchestration workflow failed.";
+        await JobLifecycleManager.updateJobStatus(jobId, "failed", 100, failureReason);
+        throw new Error(failureReason);
       }
 
-      // 5. Build and Persist Final Manifest
-      logger.info("Compiling final website manifest.");
-      const compilerOutput = context.getAgentOutput("compiler");
-      if (!compilerOutput) {
-        throw new Error("Compiler agent output is missing in execution context.");
-      }
+      // 3. Build and Persist Final Manifest
+      logger.info("Compiling final website manifest from orchestration result.");
+      const compilerOutput = workflowResult.manifest
+        ? { manifest: workflowResult.manifest }
+        : { manifest: workflowResult.blueprint };
 
       const manifestId = `man-${jobId}`;
       await ManifestBuilder.buildAndPersist(manifestId, userId, builderId, planId, compilerOutput);
       
       logger.info("Manifest built and persisted successfully.", undefined, { manifestId });
 
-      // 6. Complete Generation Job
+      // 4. Complete Generation Job
       await JobLifecycleManager.updateJobStatus(jobId, "completed", 100, null, manifestId);
       logger.info("Portfolio generation job completed successfully.");
 
     } catch (err: any) {
       const errorMessage = err?.message || String(err) || "An unexpected error occurred during orchestration.";
       logger.error(`Generation workflow failed: ${errorMessage}`);
-      
       await JobLifecycleManager.updateJobStatus(jobId, "failed", 100, errorMessage);
     }
   }

@@ -1,4 +1,4 @@
-import { db } from "@/lib/firebase/firestore";
+import { db } from "../../firebase/firestore";
 import { doc, setDoc } from "firebase/firestore";
 import { WebsiteManifest } from "./types";
 
