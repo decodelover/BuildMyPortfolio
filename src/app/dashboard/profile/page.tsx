@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { Loader2, User, Mail, Shield, Globe, Image as ImageIcon, MapPin, Briefcase, Sparkles, CheckCircle2 } from "lucide-react";
+import { Loader2, User, Mail, Shield, Globe, Image as ImageIcon, MapPin, Briefcase } from "lucide-react";
 import { uploadUserFile } from "@/lib/firebase/storage";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +26,30 @@ const profileSchema = z.object({
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
+
+function GithubIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+    </svg>
+  );
+}
+
+function TwitterIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  );
+}
+
+function LinkedinIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+    </svg>
+  );
+}
 
 export default function ProfilePage() {
   const { user, updateUser } = useAuthStore();
@@ -55,12 +79,18 @@ export default function ProfilePage() {
     },
   });
 
+  // Watch fields dynamically to render the public card preview widget
   const watchName = watch("fullName");
   const watchUsername = watch("username");
   const watchProfession = watch("profession");
   const watchBio = watch("bio");
   const watchCountry = watch("country");
+  const watchGithub = watch("socialLinks.github");
+  const watchTwitter = watch("socialLinks.twitter");
+  const watchLinkedin = watch("socialLinks.linkedin");
+  const watchWebsite = watch("socialLinks.website");
 
+  // Populate form values when user details load
   useEffect(() => {
     if (user) {
       setValue("fullName", user.fullName || "");
@@ -128,22 +158,19 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-8 text-left max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="border-b border-border/60 pb-6">
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground flex items-center gap-2.5">
-          <User className="h-7 w-7 text-primary" /> Profile Settings
-        </h1>
-        <p className="text-xs text-muted-foreground mt-1">
-          Manage your developer identity, profile avatar, and social connectivity.
-        </p>
+      <div className="space-y-1">
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Profile Settings</h1>
+        <p className="text-sm text-muted-foreground font-medium">Manage your developer profile settings and social links.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
         {/* Left Side: Avatar selector card & Live Card Preview */}
         <div className="lg:col-span-4 space-y-6">
+          
           {/* Avatar Upload Panel */}
-          <div className="rounded-3xl border border-border/60 bg-card/70 p-6 flex flex-col items-center justify-center text-center shadow-sm backdrop-blur-2xl space-y-5">
-            <div className="relative h-28 w-28 rounded-full border-2 border-primary/40 overflow-hidden bg-muted flex items-center justify-center group shadow-md">
+          <div className="rounded-2xl border border-border bg-card p-6 flex flex-col items-center justify-center text-center shadow-sm space-y-6">
+            <div className="relative h-28 w-28 rounded-full border-2 border-border overflow-hidden bg-secondary flex items-center justify-center group shadow-md">
               {user?.photoURL ? (
                 <img src={user.photoURL} alt="Avatar" className="h-full w-full object-cover" />
               ) : (
@@ -151,15 +178,15 @@ export default function ProfilePage() {
               )}
               
               {uploading && (
-                <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
-                  <Loader2 className="h-6 w-6 text-primary animate-spin" />
+                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                  <Loader2 className="h-6 w-6 text-white animate-spin" />
                 </div>
               )}
 
               {!uploading && (
-                <label className="absolute inset-0 bg-background/80 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-[10px] text-foreground font-bold cursor-pointer transition-opacity">
-                  <ImageIcon className="h-4 w-4 mb-1 text-primary" />
-                  Upload Photo
+                <label className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-[10px] text-white font-semibold cursor-pointer transition-opacity">
+                  <ImageIcon className="h-4 w-4 mb-1" />
+                  Change Photo
                   <input
                     type="file"
                     accept="image/*"
@@ -171,138 +198,237 @@ export default function ProfilePage() {
             </div>
 
             <div className="space-y-1">
-              <h4 className="text-sm font-extrabold text-foreground truncate max-w-[180px]">{user?.fullName || "Developer"}</h4>
-              <p className="text-xs text-muted-foreground font-mono truncate max-w-[180px]">@{user?.username || "username"}</p>
+              <h4 className="text-sm font-extrabold text-foreground truncate max-w-[180px]">{user?.fullName}</h4>
+              <p className="text-xs text-muted-foreground font-mono truncate max-w-[180px]">@{user?.username}</p>
             </div>
           </div>
 
-          {/* Live Preview Card */}
-          <div className="rounded-3xl border border-border/60 bg-gradient-to-tr from-card via-card/80 to-primary/10 p-6 shadow-sm backdrop-blur-2xl space-y-4">
-            <div className="flex justify-between items-center border-b border-border/40 pb-2 text-[10px] font-extrabold tracking-wider text-muted-foreground uppercase">
-              <span>Live Card Preview</span>
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+          {/* Interactive Live Card Preview Widget */}
+          <div className="rounded-2xl border border-border bg-gradient-to-tr from-card to-secondary/35 p-6 shadow-sm space-y-4">
+            <div className="flex justify-between items-center border-b border-border pb-2 text-xs font-bold text-muted-foreground">
+              <span>LIVE CARD PREVIEW</span>
+              <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
             </div>
 
-            <div className="space-y-3">
-              <div className="flex gap-3 items-center">
-                <div className="h-10 w-10 rounded-full bg-primary/10 border border-primary/20 overflow-hidden shrink-0 flex items-center justify-center">
+            <div className="space-y-4">
+              <div className="flex gap-4 items-center">
+                <div className="h-12 w-12 rounded-full bg-secondary border border-border overflow-hidden shrink-0">
                   {user?.photoURL ? (
                     <img src={user.photoURL} alt="Preview Avatar" className="h-full w-full object-cover" />
                   ) : (
-                    <User className="h-5 w-5 text-primary" />
+                    <div className="h-full w-full flex items-center justify-center"><User className="h-5 w-5 text-muted-foreground" /></div>
                   )}
                 </div>
-                <div className="text-left space-y-0.5 min-w-0">
+                <div className="text-left space-y-0.5 overflow-hidden">
                   <h4 className="font-extrabold text-foreground text-xs truncate">{watchName || "Your Name"}</h4>
                   <p className="text-[10px] text-muted-foreground font-mono truncate">@{watchUsername || "username"}</p>
                 </div>
               </div>
 
-              {watchProfession && (
-                <div className="flex items-center gap-1.5 text-[10px] font-bold text-primary">
-                  <Briefcase className="h-3.5 w-3.5 shrink-0" />
-                  <span className="truncate">{watchProfession}</span>
-                </div>
-              )}
-              {watchCountry && (
-                <div className="flex items-center gap-1.5 text-[10px] font-bold text-accent">
-                  <MapPin className="h-3.5 w-3.5 shrink-0" />
-                  <span className="truncate">{watchCountry}</span>
-                </div>
-              )}
+              {/* Dynamic Job Title & Country */}
+              <div className="space-y-2 text-[10px] text-muted-foreground text-left font-semibold">
+                {watchProfession && (
+                  <div className="flex items-center gap-1.5">
+                    <Briefcase className="h-3.5 w-3.5 text-primary shrink-0" />
+                    <span className="truncate">{watchProfession}</span>
+                  </div>
+                )}
+                {watchCountry && (
+                  <div className="flex items-center gap-1.5">
+                    <MapPin className="h-3.5 w-3.5 text-accent shrink-0" />
+                    <span className="truncate">{watchCountry}</span>
+                  </div>
+                )}
+              </div>
 
-              <p className="text-[11px] text-muted-foreground leading-relaxed border-t border-border/40 pt-2.5">
-                {watchBio || "Add your bio details to show recruiter summaries."}
+              {/* Bio block */}
+              <p className="text-[11px] text-muted-foreground leading-relaxed text-left border-t border-border/60 pt-2.5">
+                {watchBio || "Select edit fields on the right to customize details."}
               </p>
+
+              {/* Highlight active social links */}
+              <div className="flex gap-2.5 pt-1 text-muted-foreground">
+                {watchGithub && <GithubIcon className="h-4.5 w-4.5 text-foreground transition-colors" />}
+                {watchLinkedin && <LinkedinIcon className="h-4.5 w-4.5 text-foreground transition-colors" />}
+                {watchTwitter && <TwitterIcon className="h-4.5 w-4.5 text-foreground transition-colors" />}
+                {watchWebsite && <Globe className="h-4.5 w-4.5 text-foreground transition-colors" />}
+              </div>
             </div>
           </div>
+
         </div>
 
-        {/* Right Side: Profile Form */}
-        <div className="lg:col-span-8">
-          <form onSubmit={handleSubmit(onSubmit)} className="rounded-3xl border border-border/60 bg-card/70 p-6 sm:p-8 shadow-sm backdrop-blur-2xl space-y-6">
-            <h3 className="text-sm font-bold text-foreground">Edit Account Profile</h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-xs font-semibold">
+        {/* Right Side: Interactive edit forms container */}
+        <div className="lg:col-span-8 rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-sm">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-muted-foreground uppercase text-[10px]">Full Name *</label>
+                <label className="text-xs font-semibold text-muted-foreground">Full Name</label>
                 <input
                   type="text"
+                  disabled={saving}
+                  className={cn(
+                    "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/45 focus:border-primary disabled:opacity-50",
+                    errors.fullName && "border-destructive focus:ring-destructive/30"
+                  )}
                   {...register("fullName")}
-                  className="w-full rounded-xl border border-border/60 bg-background/60 px-4 py-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary/45"
                 />
-                {errors.fullName && <p className="text-[10px] text-destructive">{errors.fullName.message}</p>}
+                {errors.fullName && (
+                  <p className="text-xs text-destructive font-medium">{errors.fullName.message}</p>
+                )}
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-muted-foreground uppercase text-[10px]">Username *</label>
+                <label className="text-xs font-semibold text-muted-foreground">Username</label>
                 <input
                   type="text"
+                  disabled={saving}
+                  className={cn(
+                    "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/45 focus:border-primary disabled:opacity-50",
+                    errors.username && "border-destructive focus:ring-destructive/30"
+                  )}
                   {...register("username")}
-                  className="w-full rounded-xl border border-border/60 bg-background/60 px-4 py-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary/45"
                 />
-                {errors.username && <p className="text-[10px] text-destructive">{errors.username.message}</p>}
+                {errors.username && (
+                  <p className="text-xs text-destructive font-medium">{errors.username.message}</p>
+                )}
               </div>
+            </div>
 
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-muted-foreground uppercase text-[10px]">Profession</label>
+                <label className="text-xs font-semibold text-muted-foreground">Profession / Job Title</label>
                 <input
                   type="text"
-                  placeholder="e.g. Senior Software Engineer"
+                  placeholder="e.g. Lead React Architect"
+                  disabled={saving}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/45"
                   {...register("profession")}
-                  className="w-full rounded-xl border border-border/60 bg-background/60 px-4 py-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary/45"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-muted-foreground uppercase text-[10px]">Country</label>
+                <label className="text-xs font-semibold text-muted-foreground">Country</label>
                 <input
                   type="text"
                   placeholder="e.g. United States"
+                  disabled={saving}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/45"
                   {...register("country")}
-                  className="w-full rounded-xl border border-border/60 bg-background/60 px-4 py-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary/45"
-                />
-              </div>
-
-              <div className="sm:col-span-2 space-y-1.5">
-                <label className="text-muted-foreground uppercase text-[10px]">Bio</label>
-                <textarea
-                  rows={3}
-                  placeholder="Brief summary of your technical focus..."
-                  {...register("bio")}
-                  className="w-full rounded-xl border border-border/60 bg-background/60 px-4 py-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary/45"
                 />
               </div>
             </div>
 
-            <div className="border-t border-border/40 pt-5 space-y-4">
-              <h4 className="text-xs font-bold text-foreground">Social Links</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-semibold">
-                <input
-                  type="url"
-                  placeholder="GitHub URL"
-                  {...register("socialLinks.github")}
-                  className="w-full rounded-xl border border-border/60 bg-background/60 px-4 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary/45"
-                />
-                <input
-                  type="url"
-                  placeholder="LinkedIn URL"
-                  {...register("socialLinks.linkedin")}
-                  className="w-full rounded-xl border border-border/60 bg-background/60 px-4 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary/45"
-                />
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-muted-foreground">Short Bio (Max 250 characters)</label>
+              <textarea
+                rows={3}
+                placeholder="Write a brief intro highlighting your technical skills..."
+                disabled={saving}
+                className={cn(
+                  "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/45 resize-none disabled:opacity-50",
+                  errors.bio && "border-destructive focus:ring-destructive/30"
+                )}
+                {...register("bio")}
+              />
+              {errors.bio && (
+                <p className="text-xs text-destructive font-medium">{errors.bio.message}</p>
+              )}
+            </div>
+
+            <div className="border-t border-border pt-4 space-y-3">
+              <h3 className="text-sm font-bold text-foreground">Social Settings</h3>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                    <GithubIcon className="h-3.5 w-3.5" /> GitHub URL
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="https://github.com/yourusername"
+                    disabled={saving}
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary/45"
+                    {...register("socialLinks.github")}
+                  />
+                  {errors.socialLinks?.github && (
+                    <p className="text-[10px] text-destructive">{errors.socialLinks.github.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                    <LinkedinIcon className="h-3.5 w-3.5" /> LinkedIn URL
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="https://linkedin.com/in/yourusername"
+                    disabled={saving}
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary/45"
+                    {...register("socialLinks.linkedin")}
+                  />
+                  {errors.socialLinks?.linkedin && (
+                    <p className="text-[10px] text-destructive">{errors.socialLinks.linkedin.message}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                    <TwitterIcon className="h-3.5 w-3.5" /> Twitter URL
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="https://twitter.com/yourusername"
+                    disabled={saving}
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary/45"
+                    {...register("socialLinks.twitter")}
+                  />
+                  {errors.socialLinks?.twitter && (
+                    <p className="text-[10px] text-destructive">{errors.socialLinks.twitter.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                    <Globe className="h-3.5 w-3.5" /> Personal Website
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="https://yourwebsite.com"
+                    disabled={saving}
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary/45"
+                    {...register("socialLinks.website")}
+                  />
+                  {errors.socialLinks?.website && (
+                    <p className="text-[10px] text-destructive">{errors.socialLinks.website.message}</p>
+                  )}
+                </div>
               </div>
             </div>
 
             <button
               type="submit"
               disabled={saving}
-              className="px-6 py-3 rounded-2xl bg-gradient-to-r from-primary to-accent text-primary-foreground text-xs font-bold shadow-md hover:opacity-95 transition-opacity cursor-pointer flex items-center gap-2"
+              className="flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/95 transition-all disabled:opacity-50 mt-4 ml-auto cursor-pointer"
             >
-              {saving && <Loader2 className="h-4 w-4 animate-spin" />} Save Profile
+              {saving ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Saving Details...
+                </>
+              ) : (
+                "Save Profile Changes"
+              )}
             </button>
+
           </form>
         </div>
+
       </div>
+
     </div>
   );
 }
