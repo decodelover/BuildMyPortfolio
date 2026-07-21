@@ -2,14 +2,18 @@
 
 import Navbar from "@/components/layouts/navbar";
 import Footer from "@/components/layouts/footer";
-import { HeroSection } from "@/components/marketing/HeroSection";
+import { AmbientParticleCanvas } from "@/components/marketing/AmbientParticleCanvas";
+import { MouseFollowGlow } from "@/components/marketing/MouseFollowGlow";
+import { WorldClassHero } from "@/components/marketing/WorldClassHero";
+import { AnimatedCounterStats } from "@/components/marketing/AnimatedCounterStats";
 import { InteractivePlayground } from "@/components/marketing/InteractivePlayground";
 import { WorkflowVisualization } from "@/components/marketing/WorkflowVisualization";
 import { QualityScoreDemo } from "@/components/marketing/QualityScoreDemo";
+import { PlatformComparisonMatrix } from "@/components/marketing/PlatformComparisonMatrix";
 import { ROICalculator } from "@/components/marketing/ROICalculator";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Sparkles, ArrowRight, ShieldCheck, CheckCircle2, Star, MessageSquare } from "lucide-react";
+import { Sparkles, ArrowRight, Star } from "lucide-react";
 
 export default function HomePage() {
   const testimonials = [
@@ -34,27 +38,37 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans selection:bg-primary/20">
+    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans selection:bg-primary/20 relative">
+      {/* Background Motion Effects */}
+      <AmbientParticleCanvas />
+      <MouseFollowGlow />
+
       <Navbar />
 
-      <main className="flex-1">
-        {/* Next-Gen Hero */}
-        <HeroSection />
+      <main className="flex-1 relative z-10">
+        {/* World-Class Hero with Live Streaming AI Demo */}
+        <WorldClassHero />
 
-        {/* Live Interactive Playground */}
+        {/* Animated Counter Stats */}
+        <AnimatedCounterStats />
+
+        {/* Live Interactive Playground Sandbox */}
         <InteractivePlayground />
 
-        {/* 4-Stage AI Workflow Pipeline */}
+        {/* 4-Stage AI Pipeline Showcase */}
         <WorkflowVisualization />
 
-        {/* Automated Quality Assurance Scanner Demo */}
+        {/* Automated QA Audit Scanner Demo */}
         <QualityScoreDemo />
 
-        {/* ROI & Time Savings Calculator */}
+        {/* Platform Comparison Matrix */}
+        <PlatformComparisonMatrix />
+
+        {/* ROI Time & Cost Savings Calculator */}
         <ROICalculator />
 
         {/* Testimonials */}
-        <section className="py-16 sm:py-24 relative overflow-hidden text-center">
+        <section className="py-16 sm:py-24 relative overflow-hidden text-center select-none">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-12">
             <div className="max-w-3xl mx-auto space-y-3">
               <span className="px-3.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-extrabold uppercase tracking-wider">
@@ -67,8 +81,10 @@ export default function HomePage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
               {testimonials.map((t, idx) => (
-                <div
+                <motion.div
                   key={idx}
+                  whileHover={{ y: -6 }}
+                  transition={{ duration: 0.2 }}
                   className="rounded-3xl border border-border/60 bg-card/70 p-6 shadow-sm backdrop-blur-2xl space-y-4 flex flex-col justify-between"
                 >
                   <div className="space-y-3">
@@ -87,14 +103,14 @@ export default function HomePage() {
                       <p className="text-[10px] text-muted-foreground">{t.role}</p>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
           </div>
         </section>
 
         {/* Final CTA Banner */}
-        <section className="py-16 sm:py-20 relative overflow-hidden text-center">
+        <section className="py-16 sm:py-20 relative overflow-hidden text-center select-none">
           <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
             <div className="rounded-3xl border border-border/80 bg-gradient-to-r from-card via-card/80 to-primary/20 p-8 sm:p-12 shadow-2xl backdrop-blur-2xl space-y-6">
               <span className="px-3.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-extrabold uppercase tracking-wider">
