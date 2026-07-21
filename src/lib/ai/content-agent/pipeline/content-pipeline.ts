@@ -62,7 +62,7 @@ export class ContentPipeline {
       const blocks: ContentBlock[] = [];
 
       let finished = false;
-      let totalTasksCount = tasks.length;
+      const totalTasksCount = tasks.length;
 
       while (!finished) {
         const task = this.queue.getNextReadyTask();

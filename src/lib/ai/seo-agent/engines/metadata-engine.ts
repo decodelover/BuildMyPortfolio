@@ -10,7 +10,7 @@ export class MetadataEngine {
     const seoPref = context.seoPreference;
 
     // 1. Compile Title
-    let rawTitle = seoPref.metaTitle || 
+    const rawTitle = seoPref.metaTitle || 
       (business.websiteTitle ? business.websiteTitle : `${personal.fullName} - ${personal.profession} Portfolio`);
     
     // Clean and limit Title
@@ -20,7 +20,7 @@ export class MetadataEngine {
     }
 
     // 2. Compile Description
-    let rawDesc = seoPref.metaDescription || 
+    const rawDesc = seoPref.metaDescription || 
       (personal.headline ? `${personal.headline}. Explore my projects, skills, and background.` : 
        `Explore the professional web developer portfolio of ${personal.fullName}. Specializing in ${personal.profession}.`);
     

@@ -9,7 +9,7 @@ export class ContentQualityEngine {
     const normalized = context.normalizedData;
 
     let score = 100;
-    let deductPoints = (amount: number) => {
+    const deductPoints = (amount: number) => {
       score = Math.max(0, score - amount);
     };
 
