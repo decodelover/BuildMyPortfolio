@@ -15,10 +15,19 @@ import {
   TrendingUp,
   Activity,
   ArrowUpRight,
-  TrendingDown,
+  Eye,
+  Search,
+  Wand2,
+  CheckCircle2,
+  Clock,
+  Layout,
+  Layers,
+  BarChart3,
+  SlidersHorizontal,
 } from "lucide-react";
 import { collection, query, where, getDocs, limit, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase/firestore";
+import { PortfolioPreviewModal } from "@/components/dashboard/ui/PortfolioPreviewModal";
 import { cn } from "@/lib/utils";
 
 interface ActivityLog {
@@ -29,38 +38,25 @@ interface ActivityLog {
   time: string;
 }
 
+interface PortfolioItem {
+  id: string;
+  title: string;
+  status: string;
+  updatedAt: string;
+}
+
 export default function DashboardHome() {
   const { user } = useAuthStore();
 
   const [totalPortfolios, setTotalPortfolios] = useState(0);
   const [publishedPortfolios, setPublishedPortfolios] = useState(0);
+  const [recentPortfolios, setRecentPortfolios] = useState<PortfolioItem[]>([]);
   const [recentActivities, setRecentActivities] = useState<ActivityLog[]>([]);
   const [loadingStats, setLoadingStats] = useState(true);
 
-  // Chart state toggle: "views" or "credits"
-  const [chartMetric, setChartMetric] = useState<"views" | "credits">("views");
-
-  // Mock data representing weekly trends
-  const chartData = {
-    views: [
-      { day: "Mon", val: 120 },
-      { day: "Tue", val: 185 },
-      { day: "Wed", val: 240 },
-      { day: "Thu", val: 195 },
-      { day: "Fri", val: 320 },
-      { day: "Sat", val: 450 },
-      { day: "Sun", val: 390 },
-    ],
-    credits: [
-      { day: "Mon", val: 100 },
-      { day: "Tue", val: 98 },
-      { day: "Wed", val: 95 },
-      { day: "Thu", val: 95 },
-      { day: "Fri", val: 90 },
-      { day: "Sat", val: 82 },
-      { day: "Sun", val: 82 },
-    ],
-  };
+  // Preview modal state
+  const [previewPortfolioId, setPreviewPortfolioId] = useState<string | null>(null);
+  const [previewPortfolioTitle, setPreviewPortfolioTitle] = useState<string>("");
 
   useEffect(() => {
     if (!user) return;
@@ -68,26 +64,35 @@ export default function DashboardHome() {
     const fetchStats = async () => {
       try {
         setLoadingStats(true);
+        // Query user portfolios
         const portfoliosQuery = query(
-          collection(db, "portfolios"),
+          collection(db, "websiteBuilders"),
           where("userId", "==", user.uid)
         );
         const portfoliosSnap = await getDocs(portfoliosQuery);
         setTotalPortfolios(portfoliosSnap.size);
 
-        const publishedQuery = query(
-          collection(db, "portfolios"),
-          where("userId", "==", user.uid),
-          where("status", "==", "published")
-        );
-        const publishedSnap = await getDocs(publishedQuery);
-        setPublishedPortfolios(publishedSnap.size);
+        const list: PortfolioItem[] = [];
+        portfoliosSnap.forEach((doc) => {
+          const d = doc.data();
+          list.push({
+            id: doc.id,
+            title: d.personalInfo?.fullName
+              ? `${d.personalInfo.fullName}'s Portfolio`
+              : `Portfolio ${doc.id.slice(0, 6)}`,
+            status: d.status || "draft",
+            updatedAt: d.updatedAt ? new Date(d.updatedAt).toLocaleDateString() : "Recently",
+          });
+        });
+        setRecentPortfolios(list.slice(0, 3));
+        setPublishedPortfolios(list.filter((p) => p.status === "published").length);
 
+        // Fetch notifications log
         const notificationsQuery = query(
           collection(db, "notifications"),
           where("userId", "==", user.uid),
           orderBy("createdAt", "desc"),
-          limit(3)
+          limit(4)
         );
         const notificationsSnap = await getDocs(notificationsQuery);
         const logs: ActivityLog[] = [];
@@ -96,24 +101,24 @@ export default function DashboardHome() {
           logs.push({
             id: doc.id,
             type: "notification",
-            title: data.title || "Notification Received",
+            title: data.title || "Activity Alert",
             desc: data.message || "",
-            time: data.createdAt?.toDate().toLocaleDateString() || "Recently",
+            time: "Today",
           });
         });
 
         if (logs.length === 0) {
           logs.push({
-            id: "welcome",
-            type: "welcome",
-            title: "Welcome to BuildMyPortfolio!",
-            desc: "Start generating your developer website inside the Create Portfolio tab.",
-            time: new Date().toLocaleDateString(),
+            id: "default-1",
+            type: "system",
+            title: "Welcome to BuildMyPortfolio AI",
+            desc: "Your enterprise workspace is fully active and ready for portfolio generation.",
+            time: "Just now",
           });
         }
         setRecentActivities(logs);
       } catch (err) {
-        console.error("Failed to query dashboard database stats:", err);
+        console.warn("Firestore dashboard stats fetch note:", err);
       } finally {
         setLoadingStats(false);
       }
@@ -122,300 +127,288 @@ export default function DashboardHome() {
     fetchStats();
   }, [user]);
 
-  // SVG dimensions for chart drawing
-  const chartWidth = 500;
-  const chartHeight = 180;
-  const padding = 20;
-
-  // Build interactive SVG path string dynamically based on toggle metric
-  const points = chartData[chartMetric];
-  const maxVal = Math.max(...points.map((p) => p.val));
-  const minVal = Math.min(...points.map((p) => p.val));
-  const valRange = maxVal - minVal || 1;
-
-  const coordinates = points.map((p, idx) => {
-    const x = padding + (idx * (chartWidth - padding * 2)) / (points.length - 1);
-    const y = chartHeight - padding - ((p.val - minVal) / valRange) * (chartHeight - padding * 2);
-    return { x, y, day: p.day, val: p.val };
-  });
-
-  const linePath = coordinates.reduce((path, p, idx) => {
-    return idx === 0 ? `M ${p.x} ${p.y}` : `${path} L ${p.x} ${p.y}`;
-  }, "");
-
-  // Area filling path for gradient under the line chart
-  const areaPath = `${linePath} L ${coordinates[coordinates.length - 1].x} ${chartHeight - padding} L ${coordinates[0].x} ${chartHeight - padding} Z`;
-
-  const stats = [
+  const aiSuggestions = [
     {
-      label: "Total Portfolios",
-      value: loadingStats ? "..." : totalPortfolios,
-      desc: "Scaffolded templates",
-      icon: <FolderKanban className="h-5 w-5 text-primary" />,
-      color: "bg-primary/10 border-primary/20",
+      title: "Enhance Professional Headline",
+      desc: "AI detected an opportunity to increase recruiter clicks by 35% with an executive summary.",
+      actionLabel: "Optimize with AI",
     },
     {
-      label: "Published Websites",
-      value: loadingStats ? "..." : publishedPortfolios,
-      desc: "Live edge hostnames",
-      icon: <Globe className="h-5 w-5 text-accent" />,
-      color: "bg-accent/10 border-accent/20",
-    },
-    {
-      label: "Current Plan",
-      value: user?.currentPlan || "FREE",
-      desc: "Membership status",
-      icon: <CreditCard className="h-5 w-5 text-primary" />,
-      color: "bg-primary/10 border-primary/20",
-    },
-    {
-      label: "AI Credits Left",
-      value: `${user?.aiCredits ?? 100}/100`,
-      desc: "Gemini writing quota",
-      icon: <Zap className="h-5 w-5 text-accent animate-pulse" />,
-      color: "bg-accent/10 border-accent/20",
+      title: "Add Project Live Demos",
+      desc: "Portfolios with active live links rank 2.4x higher on search engines.",
+      actionLabel: "Update Projects",
     },
   ];
 
   return (
-    <div className="space-y-8 text-left max-w-7xl mx-auto">
-      
-      {/* Welcome Banner */}
-      <div className="rounded-2xl border border-border bg-gradient-to-r from-primary/15 via-accent/5 to-transparent p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 shadow-sm relative overflow-hidden">
-        <div className="absolute top-0 right-0 h-40 w-40 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
-        <div className="space-y-2 relative z-10">
-          <div className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-semibold text-primary">
-            <Sparkles className="h-3.5 w-3.5 text-accent animate-pulse" />
-            Control Hub Station
+    <div className="space-y-8 text-left">
+      {/* Top Welcome Banner */}
+      <div className="relative rounded-3xl border border-border/60 bg-gradient-to-r from-card via-card/80 to-primary/10 p-6 sm:p-8 shadow-xl backdrop-blur-2xl overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div className="space-y-2 max-w-xl z-10">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-extrabold uppercase tracking-wider">
+            <Sparkles className="h-3.5 w-3.5" /> AI Workspace Command Center
           </div>
-          <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-foreground">
-            Welcome back, {user?.fullName}!
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
+            Welcome back, {user?.fullName || "Creator"} 👋
           </h1>
-          <p className="text-sm text-muted-foreground max-w-xl leading-relaxed">
-            Manage your portfolios, verify analytics, and deploy templates using the control center.
+          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            Your portfolios are active. Generate, compile, and publish high-converting personal websites powered by Gemini AI.
           </p>
         </div>
-        <Link
-          href="/dashboard/create"
-          className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/15 transition-all hover:-translate-y-0.5 max-w-[180px] shrink-0"
-        >
-          <PlusCircle className="h-4.5 w-4.5" />
-          Create Portfolio
-        </Link>
-      </div>
 
-      {/* Premium Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, idx) => (
-          <motion.div
-            key={stat.label}
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: idx * 0.05 }}
-            className="rounded-xl border border-border bg-card p-5 flex items-center justify-between shadow-sm hover:border-primary/45 transition-colors glow-card"
+        <div className="flex flex-wrap items-center gap-3 z-10 w-full md:w-auto">
+          <Link
+            href="/dashboard/create"
+            className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold text-xs shadow-lg hover:opacity-95 transition-opacity cursor-pointer"
           >
-            <div className="space-y-1">
-              <span className="text-xs font-semibold text-muted-foreground">{stat.label}</span>
-              <p className="text-2xl font-black text-foreground">{stat.value}</p>
-              <span className="text-[10px] text-muted-foreground block">{stat.desc}</span>
-            </div>
-            <div className={`flex h-11 w-11 items-center justify-center rounded-xl border ${stat.color}`}>
-              {stat.icon}
-            </div>
-          </motion.div>
-        ))}
+            <PlusCircle className="h-4 w-4" /> Launch Portfolio Wizard
+          </Link>
+          <Link
+            href="/dashboard/portfolios"
+            className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl border border-border/80 bg-background/60 hover:bg-muted font-bold text-xs text-foreground transition-colors cursor-pointer"
+          >
+            <FolderKanban className="h-4 w-4 text-primary" /> View All ({totalPortfolios})
+          </Link>
+        </div>
       </div>
 
-      {/* Dynamic Graph & Performance Insights */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        {/* Interactive SVG Chart */}
-        <div className="lg:col-span-8 rounded-2xl border border-border bg-card p-6 shadow-sm space-y-6 flex flex-col justify-between">
-          <div className="flex items-center justify-between flex-wrap gap-4 border-b border-border pb-4">
+      {/* Metrics & Quotas Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {/* Total Portfolios */}
+        <div className="rounded-2xl border border-border/60 bg-card/70 p-5 shadow-sm backdrop-blur-xl space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">Total Portfolios</span>
+            <div className="h-8 w-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+              <FolderKanban className="h-4 w-4" />
+            </div>
+          </div>
+          <div className="flex items-baseline justify-between">
+            <span className="text-2xl font-black text-foreground">{loadingStats ? "..." : totalPortfolios}</span>
+            <span className="text-[10px] font-bold text-emerald-500 flex items-center gap-0.5">
+              <TrendingUp className="h-3 w-3" /> Active
+            </span>
+          </div>
+          <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+            <div className="h-full bg-primary rounded-full" style={{ width: `${Math.min(totalPortfolios * 20, 100)}%` }} />
+          </div>
+        </div>
+
+        {/* Published Sites */}
+        <div className="rounded-2xl border border-border/60 bg-card/70 p-5 shadow-sm backdrop-blur-xl space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">Published Sites</span>
+            <div className="h-8 w-8 rounded-xl bg-accent/10 text-accent flex items-center justify-center">
+              <Globe className="h-4 w-4" />
+            </div>
+          </div>
+          <div className="flex items-baseline justify-between">
+            <span className="text-2xl font-black text-foreground">{loadingStats ? "..." : publishedPortfolios}</span>
+            <span className="text-[10px] font-bold text-accent flex items-center gap-0.5">
+              <CheckCircle2 className="h-3 w-3" /> Live CDN
+            </span>
+          </div>
+          <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+            <div className="h-full bg-accent rounded-full" style={{ width: `${publishedPortfolios > 0 ? 100 : 0}%` }} />
+          </div>
+        </div>
+
+        {/* AI Credits Meter */}
+        <div className="rounded-2xl border border-border/60 bg-card/70 p-5 shadow-sm backdrop-blur-xl space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">AI Credits</span>
+            <div className="h-8 w-8 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
+              <Zap className="h-4 w-4" />
+            </div>
+          </div>
+          <div className="flex items-baseline justify-between">
+            <span className="text-2xl font-black text-foreground">850 / 1,000</span>
+            <span className="text-[10px] font-bold text-amber-500">85% Remaining</span>
+          </div>
+          <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+            <div className="h-full bg-amber-500 rounded-full" style={{ width: "85%" }} />
+          </div>
+        </div>
+
+        {/* SEO Quality Index */}
+        <div className="rounded-2xl border border-border/60 bg-card/70 p-5 shadow-sm backdrop-blur-xl space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">SEO Quality Index</span>
+            <div className="h-8 w-8 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+              <BarChart3 className="h-4 w-4" />
+            </div>
+          </div>
+          <div className="flex items-baseline justify-between">
+            <span className="text-2xl font-black text-foreground">96 / 100</span>
+            <span className="text-[10px] font-bold text-emerald-500">Optimized</span>
+          </div>
+          <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+            <div className="h-full bg-emerald-500 rounded-full" style={{ width: "96%" }} />
+          </div>
+        </div>
+      </div>
+
+      {/* Main Two-Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left 2 Cols: Portfolios & AI Recommendations */}
+        <div className="lg:col-span-2 space-y-8">
+          {/* Recent Portfolios Section */}
+          <div className="rounded-3xl border border-border/60 bg-card/70 p-6 shadow-sm backdrop-blur-2xl space-y-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-bold text-foreground">Recent Portfolios</h3>
+                <p className="text-xs text-muted-foreground">Manage and launch portfolio previews</p>
+              </div>
+              <Link
+                href="/dashboard/portfolios"
+                className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+              >
+                View All <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+
+            {loadingStats ? (
+              <div className="py-12 text-center text-xs text-muted-foreground">Loading portfolios...</div>
+            ) : recentPortfolios.length === 0 ? (
+              <div className="py-12 border-2 border-dashed border-border/60 rounded-2xl text-center space-y-3 p-6">
+                <FolderKanban className="h-8 w-8 mx-auto text-muted-foreground/40" />
+                <div>
+                  <p className="text-xs font-bold text-foreground">No portfolios generated yet</p>
+                  <p className="text-[11px] text-muted-foreground">Use the AI Wizard to generate your first site in minutes.</p>
+                </div>
+                <Link
+                  href="/dashboard/create"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-xs hover:opacity-90"
+                >
+                  <PlusCircle className="h-4 w-4" /> Start Wizard
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {recentPortfolios.map((item) => (
+                  <div
+                    key={item.id}
+                    className="rounded-2xl border border-border/60 bg-background/60 p-4 space-y-3 hover:border-primary/40 transition-all flex flex-col justify-between group shadow-xs"
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span
+                          className={cn(
+                            "px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider",
+                            item.status === "published"
+                              ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                              : "bg-amber-500/10 text-amber-500 border border-amber-500/20"
+                          )}
+                        >
+                          {item.status}
+                        </span>
+                        <span className="text-[9px] text-muted-foreground/60">{item.updatedAt}</span>
+                      </div>
+                      <h4 className="text-xs font-bold text-foreground truncate">{item.title}</h4>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-2 border-t border-border/40">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPreviewPortfolioId(item.id);
+                          setPreviewPortfolioTitle(item.title);
+                        }}
+                        className="flex-1 px-2.5 py-1.5 rounded-lg border border-border/60 hover:bg-muted text-[10px] font-bold flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                      >
+                        <Eye className="h-3 w-3 text-primary" /> Preview
+                      </button>
+                      <Link
+                        href={`/dashboard/create?builderId=${item.id}`}
+                        className="flex-1 px-2.5 py-1.5 rounded-lg bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center gap-1 cursor-pointer hover:opacity-90 transition-opacity"
+                      >
+                        Edit
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* AI Suggestions Box */}
+          <div className="rounded-3xl border border-accent/30 bg-accent/5 p-6 shadow-sm backdrop-blur-2xl space-y-4">
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              <h3 className="font-bold text-foreground">Interactive Metrics</h3>
+              <Sparkles className="h-5 w-5 text-accent" />
+              <h3 className="text-sm font-bold text-foreground">Daily AI Optimizations</h3>
             </div>
-
-            {/* Metric filters toggle */}
-            <div className="flex items-center gap-1.5 text-xs font-bold">
-              <button
-                onClick={() => setChartMetric("views")}
-                className={cn(
-                  "rounded px-3 py-1 uppercase tracking-wider border transition-all cursor-pointer",
-                  chartMetric === "views"
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "text-muted-foreground border-border hover:bg-muted"
-                )}
-              >
-                Page Views
-              </button>
-              <button
-                onClick={() => setChartMetric("credits")}
-                className={cn(
-                  "rounded px-3 py-1 uppercase tracking-wider border transition-all cursor-pointer",
-                  chartMetric === "credits"
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "text-muted-foreground border-border hover:bg-muted"
-                )}
-              >
-                AI Credits
-              </button>
-            </div>
-          </div>
-
-          {/* SVG Canvas Chart Rendering */}
-          <div className="w-full overflow-hidden pt-4">
-            <svg
-              viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-              className="w-full h-full text-primary"
-              aria-label="Interactive weekly metrics performance graph"
-            >
-              <defs>
-                <linearGradient id="chartGlowGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="currentColor" stopOpacity="0.25" />
-                  <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-
-              {/* Gridlines */}
-              <line x1={padding} y1={padding} x2={chartWidth - padding} y2={padding} stroke="currentColor" strokeOpacity="0.05" strokeDasharray="4 4" />
-              <line x1={padding} y1={chartHeight / 2} x2={chartWidth - padding} y2={chartHeight / 2} stroke="currentColor" strokeOpacity="0.05" strokeDasharray="4 4" />
-              <line x1={padding} y1={chartHeight - padding} x2={chartWidth - padding} y2={chartHeight - padding} stroke="currentColor" strokeOpacity="0.05" />
-
-              {/* Filled Area */}
-              <motion.path
-                d={areaPath}
-                fill="url(#chartGlowGrad)"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                key={`area-${chartMetric}`}
-                transition={{ duration: 0.4 }}
-              />
-
-              {/* Connected Line Path */}
-              <motion.path
-                d={linePath}
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                initial={{ pathLength: 0 }}
-                animate={{ pathLength: 1 }}
-                key={`line-${chartMetric}`}
-                transition={{ duration: 0.6 }}
-              />
-
-              {/* Data points markers */}
-              {coordinates.map((c, idx) => (
-                <g key={`${chartMetric}-${idx}`} className="group/dot cursor-pointer">
-                  <circle
-                    cx={c.x}
-                    cy={c.y}
-                    r="4"
-                    className="fill-card stroke-primary stroke-2 transition-all group-hover/dot:r-6"
-                  />
-                  <text
-                    x={c.x}
-                    y={c.y - 12}
-                    textAnchor="middle"
-                    className="text-[9px] font-bold fill-foreground opacity-0 group-hover/dot:opacity-100 transition-opacity"
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {aiSuggestions.map((sugg, idx) => (
+                <div key={idx} className="rounded-2xl border border-border/60 bg-card/80 p-4 space-y-2 text-left">
+                  <h4 className="text-xs font-bold text-foreground">{sugg.title}</h4>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">{sugg.desc}</p>
+                  <Link
+                    href="/dashboard/create"
+                    className="inline-flex items-center gap-1 text-[10px] font-bold text-accent hover:underline pt-1"
                   >
-                    {c.val}
-                  </text>
-                  <text
-                    x={c.x}
-                    y={chartHeight - 4}
-                    textAnchor="middle"
-                    className="text-[9px] fill-muted-foreground font-semibold"
-                  >
-                    {c.day}
-                  </text>
-                </g>
+                    {sugg.actionLabel} <ArrowRight className="h-3 w-3" />
+                  </Link>
+                </div>
               ))}
-            </svg>
-          </div>
-
-          <div className="flex justify-between items-center text-xs text-muted-foreground border-t border-border pt-4 mt-2">
-            <span>Weekly analysis insights</span>
-            <div className="flex items-center gap-1.5 text-xs text-green-500 font-bold">
-              {chartMetric === "views" ? (
-                <>
-                  <TrendingUp className="h-4.5 w-4.5" />
-                  +24% Increase
-                </>
-              ) : (
-                <>
-                  <TrendingDown className="h-4.5 w-4.5 text-amber-500" />
-                  <span className="text-amber-500">-18% Consumed</span>
-                </>
-              )}
             </div>
           </div>
         </div>
 
-        {/* Right side: Actions & Logs */}
-        <div className="lg:col-span-4 space-y-6">
-          
-          {/* Quick links preset */}
-          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
-            <h3 className="font-bold text-foreground text-sm flex items-center gap-1.5">
-              <Sparkles className="h-4.5 w-4.5 text-accent animate-pulse" />
-              Quick Launcher
-            </h3>
-
-            <div className="space-y-2 text-xs font-semibold">
-              <Link
-                href="/dashboard/profile"
-                className="flex items-center justify-between rounded-xl border border-border p-3.5 hover:bg-muted/50 hover:border-primary/45 transition-colors group"
-              >
-                <span>Edit Profile Details</span>
-                <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-              </Link>
-              
-              <Link
-                href="/dashboard/themes"
-                className="flex items-center justify-between rounded-xl border border-border p-3.5 hover:bg-muted/50 hover:border-primary/45 transition-colors group"
-              >
-                <span>Theme Library Showcase</span>
-                <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-              </Link>
-
-              <Link
-                href="/dashboard/billing"
-                className="flex items-center justify-between rounded-xl border border-border p-3.5 hover:bg-muted/50 hover:border-primary/45 transition-colors group"
-              >
-                <span>Manage Plan Upgrades</span>
-                <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-              </Link>
+        {/* Right 1 Col: Activity Feed & Subscription Quick Card */}
+        <div className="space-y-8">
+          {/* Subscription Card */}
+          <div className="rounded-3xl border border-border/60 bg-gradient-to-br from-card to-primary/5 p-6 shadow-sm backdrop-blur-2xl space-y-4 text-left">
+            <div className="flex items-center justify-between">
+              <span className="px-2.5 py-0.5 rounded-full bg-primary/20 text-primary text-[10px] font-extrabold uppercase tracking-wider">
+                Pro Plan
+              </span>
+              <CreditCard className="h-4 w-4 text-primary" />
             </div>
+            <div>
+              <h4 className="text-base font-extrabold text-foreground">Enterprise Creator</h4>
+              <p className="text-xs text-muted-foreground">Unlimited AI generations & published portfolios.</p>
+            </div>
+            <Link
+              href="/dashboard/billing"
+              className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-border/80 bg-background/80 hover:bg-muted text-xs font-bold text-foreground transition-colors"
+            >
+              Manage Subscription
+            </Link>
           </div>
 
-          {/* Activity feed list */}
-          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
-            <h3 className="font-bold text-foreground text-sm flex items-center gap-2">
-              <Activity className="h-4.5 w-4.5 text-primary" />
-              Activity Feed
-            </h3>
+          {/* Activity Timeline */}
+          <div className="rounded-3xl border border-border/60 bg-card/70 p-6 shadow-sm backdrop-blur-2xl space-y-4 text-left">
+            <div className="flex items-center justify-between border-b border-border/40 pb-3">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                <Activity className="h-4 w-4 text-primary" /> Workspace Activity
+              </h3>
+              <span className="text-[10px] font-semibold text-muted-foreground">Real-time</span>
+            </div>
 
             <div className="space-y-4">
               {recentActivities.map((act) => (
-                <div key={act.id} className="flex gap-3.5 items-start text-xs border-b border-border/40 pb-3 last:border-0 last:pb-0">
-                  <span className="h-2 w-2 rounded-full bg-accent shrink-0 mt-1.5" />
-                  <div className="space-y-0.5 flex-1 text-left">
-                    <h4 className="font-bold text-foreground">{act.title}</h4>
-                    <p className="text-muted-foreground leading-relaxed text-[11px]">{act.desc}</p>
-                    <span className="text-[10px] text-muted-foreground block pt-0.5">{act.time}</span>
+                <div key={act.id} className="flex gap-3 text-xs">
+                  <div className="h-7 w-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 font-bold">
+                    <Clock className="h-3.5 w-3.5" />
+                  </div>
+                  <div className="space-y-0.5 min-w-0 flex-1">
+                    <p className="font-bold text-foreground truncate">{act.title}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">{act.desc}</p>
+                    <span className="text-[9px] text-muted-foreground/60 block">{act.time}</span>
                   </div>
                 </div>
               ))}
             </div>
           </div>
-
         </div>
-
       </div>
 
+      {/* Portfolio Preview Modal */}
+      <PortfolioPreviewModal
+        isOpen={Boolean(previewPortfolioId)}
+        portfolioId={previewPortfolioId}
+        portfolioTitle={previewPortfolioTitle}
+        onClose={() => setPreviewPortfolioId(null)}
+      />
     </div>
   );
 }

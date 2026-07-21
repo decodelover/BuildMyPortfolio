@@ -1,11 +1,19 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
-import { useAuthStore } from "@/store/useAuthStore";
-import { useTheme } from "next-themes";
 import { ProtectedRoute } from "@/components/shared/protected-route";
+import { FloatingSidebar } from "@/components/dashboard/ui/FloatingSidebar";
+import { FloatingNavHeader } from "@/components/dashboard/ui/FloatingNavHeader";
+import { MobileBottomNav } from "@/components/dashboard/ui/MobileBottomNav";
+import { CommandPalette } from "@/components/dashboard/ui/CommandPalette";
+import { QuickAIAssistantModal } from "@/components/dashboard/ui/QuickAIAssistantModal";
+import { NotificationDrawer } from "@/components/dashboard/ui/NotificationDrawer";
+import { useAuthStore } from "@/store/useAuthStore";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { db } from "@/lib/firebase/firestore";
+import { AnimatePresence, motion } from "framer-motion";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   FolderKanban,
@@ -16,46 +24,23 @@ import {
   HelpCircle,
   Settings,
   LogOut,
-  Menu,
   X,
-  Sun,
-  Moon,
-  Search,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  User,
   Sparkles,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase/firestore";
 import { cn } from "@/lib/utils";
-
-const sidebarItems = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "My Portfolios", href: "/dashboard/portfolios", icon: FolderKanban },
-  { label: "Create Portfolio", href: "/dashboard/create", icon: PlusCircle },
-  { label: "Themes", href: "/dashboard/themes", icon: Palette },
-  { label: "Billing", href: "/dashboard/billing", icon: CreditCard },
-  { label: "Notifications", href: "/dashboard/notifications", icon: Bell, badge: true },
-  { label: "Support", href: "/dashboard/support", icon: HelpCircle },
-  { label: "Settings", href: "/dashboard/settings", icon: Settings },
-];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuthStore();
-  const { theme, setTheme } = useTheme();
-  const router = useRouter();
   const pathname = usePathname();
 
   const [mounted, setMounted] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [isAIAssistantOpen, setIsAIAssistantOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
 
-  // Sync mount cycle
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -74,349 +59,144 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         setUnreadNotifications(snapshot.size);
       },
       (error) => {
-        console.warn("Notifications listener error (index may be building):", error.message);
+        console.warn("Firestore notification count error:", error.message);
         setUnreadNotifications(0);
       }
     );
     return () => unsubscribe();
   }, [user]);
 
-  // Construct breadcrumbs
-  const getBreadcrumbs = () => {
-    const paths = pathname.split("/").filter((p) => p);
-    return paths.map((path, idx) => {
-      const href = "/" + paths.slice(0, idx + 1).join("/");
-      const label = path.charAt(0).toUpperCase() + path.slice(1);
-      const isLast = idx === paths.length - 1;
-      return { label, href, isLast };
-    });
-  };
+  if (!mounted) return null;
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      router.push("/login");
-    } catch (err) {
-      console.error("Dashboard signout error:", err);
-    }
-  };
-
-  // Exempt website builder focus mode from standard layout
-  if (pathname.startsWith("/dashboard/create")) {
-    return <ProtectedRoute>{children}</ProtectedRoute>;
-  }
+  const mobileNavItems = [
+    { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { label: "My Portfolios", href: "/dashboard/portfolios", icon: FolderKanban },
+    { label: "Create Portfolio", href: "/dashboard/create", icon: PlusCircle },
+    { label: "Themes", href: "/dashboard/themes", icon: Palette },
+    { label: "Billing", href: "/dashboard/billing", icon: CreditCard },
+    { label: "Notifications", href: "/dashboard/notifications", icon: Bell },
+    { label: "Support", href: "/dashboard/support", icon: HelpCircle },
+    { label: "Settings", href: "/dashboard/settings", icon: Settings },
+  ];
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen flex bg-background text-foreground transition-colors duration-300">
-        
-        {/* Desktop Sidebar */}
-        <aside
-          className={cn(
-            "hidden lg:flex flex-col border-r border-border bg-card/60 backdrop-blur-xl shrink-0 transition-all duration-300 relative",
-            isSidebarCollapsed ? "w-20" : "w-64"
-          )}
-        >
-          {/* Collapse/Expand toggle handle */}
-          <button
-            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            className="absolute top-5 -right-3 h-6 w-6 rounded-full border border-border bg-card flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted shadow-sm cursor-pointer z-40 transition-colors"
-          >
-            {isSidebarCollapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
-          </button>
+      <div className="min-h-screen bg-background text-foreground flex flex-col font-sans selection:bg-primary/20">
+        {/* Workspace Main Grid */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Desktop Floating Sidebar */}
+          <FloatingSidebar
+            isCollapsed={isSidebarCollapsed}
+            onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            unreadNotifications={unreadNotifications}
+          />
 
-          <div className={cn("flex h-16 items-center border-b border-border transition-all", isSidebarCollapsed ? "justify-center px-2" : "px-6")}>
-            <Link href="/dashboard" className="flex items-center gap-2.5 font-extrabold text-lg tracking-tight">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-primary to-accent text-primary-foreground shadow-md">
-                <Sparkles className="h-5 w-5 text-accent animate-pulse" />
-              </div>
-              {!isSidebarCollapsed && (
-                <span className="bg-gradient-to-r from-primary via-foreground to-accent bg-clip-text text-transparent transition-opacity duration-300">
-                  BuildMyPortfolio
-                </span>
-              )}
-            </Link>
+          {/* Main Content Area */}
+          <div className="flex-1 flex flex-col min-w-0">
+            <FloatingNavHeader
+              onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+              onOpenNotifications={() => setIsNotificationsOpen(true)}
+              onOpenAIAssistant={() => setIsAIAssistantOpen(true)}
+              onToggleMobileSidebar={() => setIsMobileSidebarOpen(true)}
+              unreadNotifications={unreadNotifications}
+            />
+
+            {/* Page View Container */}
+            <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 pb-24 md:pb-8 max-w-7xl mx-auto w-full space-y-6">
+              {children}
+            </main>
           </div>
+        </div>
 
-          <nav className={cn("flex-1 py-6 space-y-1.5 overflow-y-auto", isSidebarCollapsed ? "px-2" : "px-4")}>
-            {sidebarItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className={cn(
-                    "flex items-center rounded-xl py-3 text-sm font-semibold transition-all relative group",
-                    isSidebarCollapsed ? "justify-center px-0" : "justify-between px-4",
-                    isActive
-                      ? "bg-primary text-primary-foreground shadow-md shadow-primary/10"
-                      : "text-muted-foreground hover:bg-muted/75 hover:text-foreground"
-                  )}
-                >
-                  <div className="flex items-center gap-3">
-                    <Icon className="h-5 w-5 shrink-0" />
-                    {!isSidebarCollapsed && <span>{item.label}</span>}
-                  </div>
-                  {item.badge && unreadNotifications > 0 && (
-                    <span className={cn(
-                      "rounded-full px-2 py-0.5 text-[10px] font-bold shrink-0",
-                      isActive ? "bg-white text-primary" : "bg-primary text-white",
-                      isSidebarCollapsed && "absolute -top-1 -right-1"
-                    )}>
-                      {unreadNotifications}
-                    </span>
-                  )}
-                  {/* Tooltip on collapsed state */}
-                  {isSidebarCollapsed && (
-                    <div className="absolute left-full ml-3 px-2 py-1 rounded bg-popover border border-border text-popover-foreground text-xs opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-md">
-                      {item.label}
-                    </div>
-                  )}
-                </Link>
-              );
-            })}
-
-            <button
-              onClick={handleLogout}
-              className={cn(
-                "flex w-full items-center rounded-xl py-3 text-sm font-semibold text-destructive hover:bg-destructive/10 transition-colors mt-6 text-left cursor-pointer relative group",
-                isSidebarCollapsed ? "justify-center px-0" : "px-4"
-              )}
-            >
-              <LogOut className="h-5 w-5 shrink-0" />
-              {!isSidebarCollapsed && <span>Logout</span>}
-              {isSidebarCollapsed && (
-                <div className="absolute left-full ml-3 px-2 py-1 rounded bg-popover border border-border text-destructive text-xs opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-md">
-                  Logout
-                </div>
-              )}
-            </button>
-          </nav>
-        </aside>
-
-        {/* Mobile sidebar drawer */}
+        {/* Mobile Sidebar Overlay Drawer */}
         <AnimatePresence>
-          {isSidebarOpen && (
-            <>
+          {isMobileSidebarOpen && (
+            <div className="fixed inset-0 z-50 md:hidden">
               <motion.div
                 initial={{ opacity: 0 }}
-                animate={{ opacity: 0.5 }}
+                animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                onClick={() => setIsSidebarOpen(false)}
-                className="fixed inset-0 z-40 bg-black lg:hidden"
+                onClick={() => setIsMobileSidebarOpen(false)}
+                className="fixed inset-0 bg-background/80 backdrop-blur-md"
               />
-              <motion.aside
+              <motion.div
                 initial={{ x: "-100%" }}
                 animate={{ x: 0 }}
                 exit={{ x: "-100%" }}
-                transition={{ type: "spring", bounce: 0, duration: 0.3 }}
-                className="fixed inset-y-0 left-0 z-50 w-64 border-r border-border bg-card flex flex-col lg:hidden"
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="relative w-4/5 max-w-xs h-full bg-card border-r border-border p-5 flex flex-col shadow-2xl"
               >
-                <div className="flex h-16 items-center justify-between px-6 border-b border-border">
-                  <Link href="/dashboard" className="flex items-center gap-2 font-bold text-lg">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-tr from-primary to-accent text-white">
+                <div className="flex items-center justify-between border-b border-border/40 pb-4 mb-4">
+                  <div className="flex items-center gap-2">
+                    <div className="h-8 w-8 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold text-xs">
                       <Sparkles className="h-4 w-4" />
                     </div>
-                    <span>BuildMyPortfolio</span>
-                  </Link>
-                  <button onClick={() => setIsSidebarOpen(false)} className="rounded-lg p-1.5 hover:bg-muted">
+                    <span className="font-extrabold text-sm text-foreground">BuildMyPortfolio</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsMobileSidebarOpen(false)}
+                    className="p-1 rounded-lg text-muted-foreground hover:text-foreground"
+                  >
                     <X className="h-5 w-5" />
                   </button>
                 </div>
-                <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
-                  {sidebarItems.map((item) => {
+
+                <div className="flex-1 overflow-y-auto space-y-1">
+                  {mobileNavItems.map((item) => {
                     const Icon = item.icon;
                     const isActive = pathname === item.href;
                     return (
                       <Link
-                        key={item.label}
+                        key={item.href}
                         href={item.href}
-                        onClick={() => setIsSidebarOpen(false)}
+                        onClick={() => setIsMobileSidebarOpen(false)}
                         className={cn(
-                          "flex items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold transition-all",
+                          "flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-colors",
                           isActive
-                            ? "bg-primary text-primary-foreground shadow-md"
-                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                            ? "bg-primary text-primary-foreground"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
                         )}
                       >
-                        <div className="flex items-center gap-3">
-                          <Icon className="h-4.5 w-4.5" />
-                          <span>{item.label}</span>
-                        </div>
-                        {item.badge && unreadNotifications > 0 && (
-                          <span className={cn(
-                            "rounded-full px-2 py-0.5 text-[10px] font-bold",
-                            isActive ? "bg-white text-primary" : "bg-primary text-white"
-                          )}>
-                            {unreadNotifications}
-                          </span>
-                        )}
+                        <Icon className="h-4.5 w-4.5" />
+                        {item.label}
                       </Link>
                     );
                   })}
-                  <button
-                    onClick={handleLogout}
-                    className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-destructive hover:bg-destructive/10 transition-colors mt-6 text-left"
-                  >
-                    <LogOut className="h-4.5 w-4.5" />
-                    <span>Logout</span>
-                  </button>
-                </nav>
-              </motion.aside>
-            </>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileSidebarOpen(false);
+                    logout();
+                  }}
+                  className="mt-4 flex items-center gap-2 p-3 rounded-xl border border-destructive/20 bg-destructive/10 text-destructive text-xs font-bold w-full justify-center"
+                >
+                  <LogOut className="h-4 w-4" /> Log Out
+                </button>
+              </motion.div>
+            </div>
           )}
         </AnimatePresence>
 
-        {/* Main Content Area */}
-        <div className="flex-1 flex flex-col min-h-screen overflow-x-hidden">
-          
-          {/* Top Navbar */}
-          <header className="h-16 border-b border-border bg-card/40 backdrop-blur-xl flex items-center justify-between px-6 sticky top-0 z-30 transition-colors">
-            
-            {/* Left side: Breadcrumbs and Mobile trigger */}
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setIsSidebarOpen(true)}
-                className="lg:hidden rounded-lg p-2 hover:bg-muted text-muted-foreground"
-                aria-label="Open menu drawer"
-              >
-                <Menu className="h-5 w-5" />
-              </button>
+        {/* Mobile Floating Bottom Nav */}
+        <MobileBottomNav onOpenAIAssistant={() => setIsAIAssistantOpen(true)} />
 
-              {/* Dynamic Breadcrumbs */}
-              <nav className="hidden sm:flex items-center gap-2 text-xs font-semibold text-muted-foreground">
-                <Link href="/dashboard" className="hover:text-primary transition-colors">
-                  Dashboard
-                </Link>
-                {getBreadcrumbs().map((bc) => (
-                  <span key={bc.href} className="flex items-center gap-2">
-                    <span className="opacity-45">/</span>
-                    {bc.isLast ? (
-                      <span className="text-foreground font-bold">{bc.label}</span>
-                    ) : (
-                      <Link href={bc.href} className="hover:text-primary transition-colors">
-                        {bc.label}
-                      </Link>
-                    )}
-                  </span>
-                ))}
-              </nav>
-            </div>
-
-            {/* Right side: Actions & User Menu */}
-            <div className="flex items-center gap-4">
-              
-              {/* Search input box */}
-              <div className="relative hidden md:block max-w-[200px]">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Global search..."
-                  className="w-full rounded-lg border border-border bg-background px-8 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/45"
-                />
-              </div>
-
-              {/* Theme switch button */}
-              {mounted && (
-                <button
-                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                  className="rounded-lg p-2 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                  aria-label="Toggle visual theme"
-                >
-                  {theme === "dark" ? <Sun className="h-4.5 w-4.5" /> : <Moon className="h-4.5 w-4.5" />}
-                </button>
-              )}
-
-              {/* Notifications link shortcut */}
-              <Link
-                href="/dashboard/notifications"
-                className="relative rounded-lg p-2 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                aria-label="View notifications catalog"
-              >
-                <Bell className="h-4.5 w-4.5" />
-                {unreadNotifications > 0 && (
-                  <span className="absolute top-1.5 right-1.5 flex h-2 w-2 rounded-full bg-primary" />
-                )}
-              </Link>
-
-              {/* Profile drop-down trigger */}
-              <div className="relative">
-                <button
-                  onClick={() => setIsProfileOpen(!isProfileOpen)}
-                  className="flex items-center gap-2 rounded-lg p-1 hover:bg-muted transition-colors cursor-pointer"
-                  aria-label="Toggle user actions dropdown"
-                >
-                  <div className="h-7 w-7 rounded-full bg-secondary flex items-center justify-center text-xs overflow-hidden border border-border">
-                    {user?.photoURL ? (
-                      <img src={user.photoURL} alt="User Avatar" className="h-full w-full object-cover" />
-                    ) : (
-                      <User className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </div>
-                  <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", isProfileOpen && "rotate-180")} />
-                </button>
-
-                <AnimatePresence>
-                  {isProfileOpen && (
-                    <>
-                      {/* Close click blocker */}
-                      <div className="fixed inset-0 z-40" onClick={() => setIsProfileOpen(false)} />
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: 5 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: 5 }}
-                        transition={{ duration: 0.15 }}
-                        className="absolute right-0 mt-2 w-56 rounded-xl border border-border bg-card p-2.5 shadow-xl z-50 space-y-1 text-left"
-                      >
-                        <div className="px-2.5 py-1.5 border-b border-border mb-1.5 pb-2">
-                          <p className="text-xs font-bold text-foreground truncate">{user?.fullName}</p>
-                          <p className="text-[10px] text-muted-foreground truncate">{user?.email}</p>
-                        </div>
-                        
-                        <Link
-                          href="/dashboard/profile"
-                          onClick={() => setIsProfileOpen(false)}
-                          className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-semibold hover:bg-muted text-foreground transition-colors"
-                        >
-                          <User className="h-4 w-4" />
-                          View Profile
-                        </Link>
-                        
-                        <Link
-                          href="/dashboard/settings"
-                          onClick={() => setIsProfileOpen(false)}
-                          className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-semibold hover:bg-muted text-foreground transition-colors"
-                        >
-                          <Settings className="h-4 w-4" />
-                          Settings
-                        </Link>
-
-                        <button
-                          onClick={() => {
-                            setIsProfileOpen(false);
-                            handleLogout();
-                          }}
-                          className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-semibold text-destructive hover:bg-destructive/10 transition-colors text-left cursor-pointer"
-                        >
-                          <LogOut className="h-4 w-4" />
-                          Sign Out
-                        </button>
-                      </motion.div>
-                    </>
-                  )}
-                </AnimatePresence>
-              </div>
-
-            </div>
-          </header>
-
-          {/* Children views pages */}
-          <main className="flex-1 p-6 relative">
-            {children}
-          </main>
-
-        </div>
+        {/* Interactive Modals & Drawers */}
+        <CommandPalette
+          isOpen={isCommandPaletteOpen}
+          onClose={() => setIsCommandPaletteOpen(false)}
+          onOpenAIAssistant={() => setIsAIAssistantOpen(true)}
+        />
+        <QuickAIAssistantModal
+          isOpen={isAIAssistantOpen}
+          onClose={() => setIsAIAssistantOpen(false)}
+        />
+        <NotificationDrawer
+          isOpen={isNotificationsOpen}
+          onClose={() => setIsNotificationsOpen(false)}
+        />
       </div>
     </ProtectedRoute>
   );

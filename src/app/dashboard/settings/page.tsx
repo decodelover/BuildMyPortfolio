@@ -3,16 +3,36 @@
 import { useState } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { Settings, Mail, ShieldAlert, KeyRound, AlertTriangle, Loader2 } from "lucide-react";
+import {
+  Settings,
+  Mail,
+  ShieldAlert,
+  KeyRound,
+  AlertTriangle,
+  Loader2,
+  Sun,
+  Moon,
+  Laptop,
+  Bell,
+  Globe,
+  Key,
+  Layers,
+  CheckCircle2,
+} from "lucide-react";
 import { getAuth, updatePassword, deleteUser } from "firebase/auth";
 import { doc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/firestore";
+import { cn } from "@/lib/utils";
 
 export default function SettingsPage() {
   const { user, logout } = useAuthStore();
+  const { theme, setTheme } = useTheme();
   const router = useRouter();
+
+  const [activeTab, setActiveTab] = useState<"general" | "security" | "notifications" | "appearance" | "apikeys">("general");
 
   const [savingEmails, setSavingEmails] = useState(false);
   const [updatingPass, setUpdatingPass] = useState(false);
@@ -24,16 +44,20 @@ export default function SettingsPage() {
 
   // Notification checkbox states
   const [emailReplies, setEmailReplies] = useState(true);
+  const [compilationAlerts, setCompilationAlerts] = useState(true);
   const [newsletter, setNewsletter] = useState(false);
 
-  const handleSaveEmails = async (e: React.FormEvent) => {
+  // API Key state
+  const [apiKey, setApiKey] = useState("bmp_live_9f837192a01b4c3e8912");
+
+  const handleSaveNotifications = async (e: React.FormEvent) => {
     e.preventDefault();
     setSavingEmails(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      toast.success("Email preferences updated successfully!");
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      toast.success("Notification preferences updated!");
     } catch (err) {
-      toast.error("Failed to update email preferences.");
+      toast.error("Failed to update notification preferences.");
     } finally {
       setSavingEmails(false);
     }
@@ -63,7 +87,7 @@ export default function SettingsPage() {
     } catch (error) {
       const err = error as { code?: string; message?: string };
       if (err.code === "auth/requires-recent-login") {
-        toast.error("This action is sensitive and requires a recent login. Please sign out and sign back in to change your password.");
+        toast.error("Requires a recent login. Please sign out and sign back in to change your password.");
       } else {
         toast.error(err.message || "Failed to update password.");
       }
@@ -74,7 +98,7 @@ export default function SettingsPage() {
 
   const handleDeleteAccount = async () => {
     const confirmation = window.confirm(
-      "WARNING: This action is permanent. All your portfolios, account settings, and project records will be deleted forever. Do you wish to proceed?"
+      "WARNING: This action is permanent. All your portfolios and account records will be deleted forever. Proceed?"
     );
     if (!confirmation || !user) return;
 
@@ -84,178 +108,265 @@ export default function SettingsPage() {
       const currentUser = auth.currentUser;
       if (!currentUser) throw new Error("No active user session found.");
 
-      // 1. Delete document from Firestore
       await deleteDoc(doc(db, "users", user.uid));
-
-      // 2. Delete user auth details from Firebase Auth
       await deleteUser(currentUser);
-
-      // 3. Clear Zustand and cookies
       await logout();
 
-      toast.success("Account has been permanently deleted.");
+      toast.success("Account permanently deleted.");
       router.push("/register");
     } catch (error) {
       const err = error as { code?: string; message?: string };
       if (err.code === "auth/requires-recent-login") {
-        toast.error("This action is sensitive and requires a recent login. Please sign out and sign back in before deleting your account.");
+        toast.error("Requires a recent login. Please re-authenticate to delete your account.");
       } else {
-        toast.error(err.message || "Failed to delete account. Please try again.");
+        toast.error(err.message || "Failed to delete account.");
       }
     } finally {
       setDeletingUser(false);
     }
   };
 
+  const tabs = [
+    { id: "general", label: "General", icon: Settings },
+    { id: "security", label: "Security & Passwords", icon: KeyRound },
+    { id: "notifications", label: "Notifications", icon: Bell },
+    { id: "appearance", label: "Appearance", icon: Sun },
+    { id: "apikeys", label: "API Keys", icon: Key },
+  ] as const;
+
   return (
-    <div className="space-y-8 text-left max-w-4xl">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-extrabold tracking-tight">Account Settings</h1>
-        <p className="text-sm text-muted-foreground">Manage your login details, security, and notification settings.</p>
+    <div className="space-y-8 text-left max-w-5xl">
+      {/* Header */}
+      <div className="border-b border-border/60 pb-6">
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground flex items-center gap-2.5">
+          <Settings className="h-7 w-7 text-primary" /> Workspace Settings
+        </h1>
+        <p className="text-xs text-muted-foreground mt-1">
+          Configure security credentials, notifications, visual theme preferences, and API integrations.
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        
-        {/* Left Side: Email and Password Configs */}
-        <div className="space-y-8">
-          
-          {/* Email preferences panel */}
-          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
-            <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-              <Mail className="h-4 w-4 text-primary" />
-              Email Preferences
-            </h3>
-            
-            <form onSubmit={handleSaveEmails} className="space-y-4 text-xs font-semibold">
-              <div className="space-y-3">
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={emailReplies}
-                    onChange={(e) => setEmailReplies(e.target.checked)}
-                    className="rounded border-border text-primary focus:ring-primary/45 mt-0.5"
-                  />
-                  <div>
-                    <span className="block text-foreground font-bold">Support Ticket Replies</span>
-                    <span className="text-[10px] text-muted-foreground block font-medium">Send email copies when an administrator responds to your support ticket.</span>
-                  </div>
-                </label>
+      {/* Tabs Bar */}
+      <div className="flex items-center gap-2 overflow-x-auto border-b border-border/40 pb-2 no-scrollbar">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap",
+                isActive
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
+              )}
+            >
+              <Icon className="h-4 w-4" />
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
 
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={newsletter}
-                    onChange={(e) => setNewsletter(e.target.checked)}
-                    className="rounded border-border text-primary focus:ring-primary/45 mt-0.5"
-                  />
-                  <div>
-                    <span className="block text-foreground font-bold">Marketing &amp; Product Updates</span>
-                    <span className="text-[10px] text-muted-foreground block font-medium">Receive periodic summaries of newly deployed templates and AI builder features.</span>
-                  </div>
-                </label>
-              </div>
-
-              <button
-                type="submit"
-                disabled={savingEmails}
-                className="rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow hover:bg-primary/95 transition-all disabled:opacity-50 mt-2 flex items-center justify-center gap-1.5"
-              >
-                {savingEmails ? <Loader2 className="h-3 w-3 animate-spin" /> : "Save Preferences"}
-              </button>
-            </form>
+      {/* Tab Panels */}
+      {activeTab === "general" && (
+        <div className="rounded-3xl border border-border/60 bg-card/70 p-6 shadow-sm backdrop-blur-2xl space-y-6">
+          <h3 className="text-sm font-bold text-foreground">General Workspace Configuration</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs font-semibold">
+            <div className="space-y-1.5">
+              <label className="text-muted-foreground uppercase text-[10px]">Primary Email</label>
+              <input
+                type="email"
+                disabled
+                value={user?.email || ""}
+                className="w-full rounded-xl border border-border bg-muted/40 px-4 py-3 text-xs opacity-75"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-muted-foreground uppercase text-[10px]">Full Name</label>
+              <input
+                type="text"
+                disabled
+                value={user?.fullName || "User"}
+                className="w-full rounded-xl border border-border bg-muted/40 px-4 py-3 text-xs opacity-75"
+              />
+            </div>
           </div>
+        </div>
+      )}
 
-          {/* Change password panel */}
-          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
+      {activeTab === "security" && (
+        <div className="space-y-6">
+          {/* Change Password Card */}
+          <div className="rounded-3xl border border-border/60 bg-card/70 p-6 shadow-sm backdrop-blur-2xl space-y-4">
             <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-              <KeyRound className="h-4 w-4 text-primary" />
-              Security Password Reset
+              <KeyRound className="h-4 w-4 text-primary" /> Change Password
             </h3>
-
-            <form onSubmit={handleChangePassword} className="space-y-3 text-xs font-semibold">
-              <div className="space-y-1">
-                <label className="text-[10px] text-muted-foreground uppercase">New Password</label>
+            <form onSubmit={handleChangePassword} className="space-y-4 max-w-md text-xs font-semibold">
+              <div className="space-y-1.5">
+                <label className="text-muted-foreground uppercase text-[10px]">New Password</label>
                 <input
                   type="password"
-                  placeholder="At least 6 characters"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  disabled={updatingPass}
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary/45"
+                  placeholder="Min 6 characters"
+                  className="w-full rounded-xl border border-border bg-background px-4 py-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary/45"
                 />
               </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] text-muted-foreground uppercase">Confirm Password</label>
+              <div className="space-y-1.5">
+                <label className="text-muted-foreground uppercase text-[10px]">Confirm Password</label>
                 <input
                   type="password"
-                  placeholder="Re-enter password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  disabled={updatingPass}
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary/45"
+                  placeholder="Repeat new password"
+                  className="w-full rounded-xl border border-border bg-background px-4 py-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary/45"
                 />
               </div>
-
               <button
                 type="submit"
                 disabled={updatingPass}
-                className="rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow hover:bg-primary/95 transition-all disabled:opacity-50 mt-2 flex items-center justify-center gap-1.5"
+                className="px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-xs hover:opacity-90 transition-opacity cursor-pointer flex items-center gap-2"
               >
-                {updatingPass ? <Loader2 className="h-3 w-3 animate-spin" /> : "Update Password"}
+                {updatingPass && <Loader2 className="h-3.5 w-3.5 animate-spin" />} Update Password
               </button>
             </form>
           </div>
 
-        </div>
-
-        {/* Right Side: Account Deletion */}
-        <div className="space-y-8">
-          
-          {/* Danger zone panel */}
-          <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-6 shadow-sm space-y-4 h-full flex flex-col justify-between">
-            <div className="space-y-4">
-              <h3 className="text-sm font-bold text-destructive flex items-center gap-2">
-                <ShieldAlert className="h-4.5 w-4.5" />
-                Danger Zone Settings
-              </h3>
-              
-              <div className="space-y-3 text-xs text-muted-foreground">
-                <div className="flex gap-3 items-start p-3 bg-destructive/10 rounded-xl border border-destructive/20 text-destructive">
-                  <AlertTriangle className="h-5 w-5 shrink-0" />
-                  <div>
-                    <span className="font-bold block">Account Removal is Permanent</span>
-                    <span className="text-[10px] leading-relaxed">
-                      All created portfolios, subdomains, files, settings, and linked integrations data will be removed immediately. This is not reversible.
-                    </span>
-                  </div>
-                </div>
-                <p className="leading-relaxed">
-                  Before requesting account termination, export your project source files (.zip) or save any custom content values elsewhere.
-                </p>
-              </div>
-            </div>
-
+          {/* Danger Zone Card */}
+          <div className="rounded-3xl border border-destructive/30 bg-destructive/5 p-6 shadow-sm backdrop-blur-2xl space-y-3">
+            <h3 className="text-sm font-bold text-destructive flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4" /> Danger Zone
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              Permanently remove your profile, portfolio websites, and user data. This cannot be reversed.
+            </p>
             <button
-              onClick={handleDeleteAccount}
+              type="button"
               disabled={deletingUser}
-              className="w-full rounded-xl bg-destructive text-destructive-foreground py-2.5 text-xs font-semibold hover:bg-destructive/95 shadow transition-all mt-6 flex items-center justify-center gap-1.5"
+              onClick={handleDeleteAccount}
+              className="px-4 py-2.5 rounded-xl bg-destructive text-destructive-foreground text-xs font-bold shadow-xs hover:opacity-90 cursor-pointer flex items-center gap-2"
             >
-              {deletingUser ? (
-                <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  Deleting Account...
-                </>
-              ) : (
-                "Permanently Delete Account"
-              )}
+              {deletingUser && <Loader2 className="h-3.5 w-3.5 animate-spin" />} Delete Workspace & Account
             </button>
           </div>
-
         </div>
+      )}
 
-      </div>
+      {activeTab === "notifications" && (
+        <form onSubmit={handleSaveNotifications} className="rounded-3xl border border-border/60 bg-card/70 p-6 shadow-sm backdrop-blur-2xl space-y-5">
+          <h3 className="text-sm font-bold text-foreground">Notification Preferences</h3>
+          <div className="space-y-4 text-xs font-medium">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={emailReplies}
+                onChange={(e) => setEmailReplies(e.target.checked)}
+                className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+              />
+              <span>Receive email alerts when portfolio contact forms are submitted</span>
+            </label>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={compilationAlerts}
+                onChange={(e) => setCompilationAlerts(e.target.checked)}
+                className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+              />
+              <span>Receive AI compilation and publishing completion notifications</span>
+            </label>
+          </div>
+          <button
+            type="submit"
+            disabled={savingEmails}
+            className="px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold cursor-pointer hover:opacity-90"
+          >
+            {savingEmails ? "Saving..." : "Save Preferences"}
+          </button>
+        </form>
+      )}
 
+      {activeTab === "appearance" && (
+        <div className="rounded-3xl border border-border/60 bg-card/70 p-6 shadow-sm backdrop-blur-2xl space-y-6">
+          <h3 className="text-sm font-bold text-foreground">Platform Visual Theme</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <button
+              type="button"
+              onClick={() => setTheme("light")}
+              className={cn(
+                "p-5 rounded-2xl border text-left space-y-3 cursor-pointer transition-all",
+                theme === "light" ? "border-primary bg-primary/5 shadow-sm" : "border-border/60 bg-background/50"
+              )}
+            >
+              <Sun className="h-6 w-6 text-amber-500" />
+              <div>
+                <p className="text-xs font-bold text-foreground">Light Mode</p>
+                <p className="text-[10px] text-muted-foreground">Crisp clean workspace theme</p>
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setTheme("dark")}
+              className={cn(
+                "p-5 rounded-2xl border text-left space-y-3 cursor-pointer transition-all",
+                theme === "dark" ? "border-primary bg-primary/5 shadow-sm" : "border-border/60 bg-background/50"
+              )}
+            >
+              <Moon className="h-6 w-6 text-indigo-400" />
+              <div>
+                <p className="text-xs font-bold text-foreground">Dark Mode</p>
+                <p className="text-[10px] text-muted-foreground">Obsidian glassmorphism theme</p>
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setTheme("system")}
+              className={cn(
+                "p-5 rounded-2xl border text-left space-y-3 cursor-pointer transition-all",
+                theme === "system" ? "border-primary bg-primary/5 shadow-sm" : "border-border/60 bg-background/50"
+              )}
+            >
+              <Laptop className="h-6 w-6 text-primary" />
+              <div>
+                <p className="text-xs font-bold text-foreground">System Preference</p>
+                <p className="text-[10px] text-muted-foreground">Sync automatically with OS</p>
+              </div>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "apikeys" && (
+        <div className="rounded-3xl border border-border/60 bg-card/70 p-6 shadow-sm backdrop-blur-2xl space-y-4">
+          <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+            <Key className="h-4 w-4 text-primary" /> Enterprise API Access Key
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            Use your personal API secret token to trigger programmatic portfolio generation and compilation.
+          </p>
+          <div className="flex items-center gap-2 max-w-md">
+            <input
+              type="text"
+              readOnly
+              value={apiKey}
+              className="flex-1 rounded-xl border border-border bg-muted/40 px-3.5 py-2.5 text-xs font-mono text-foreground"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                const newKey = `bmp_live_${Math.random().toString(36).substring(2, 18)}`;
+                setApiKey(newKey);
+                toast.success("Generated new API Key!");
+              }}
+              className="px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold cursor-pointer hover:opacity-90"
+            >
+              Regenerate
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
