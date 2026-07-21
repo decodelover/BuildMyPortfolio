@@ -233,7 +233,7 @@ export function BespokeWorkspaceLayout({ children }: BespokeWorkspaceLayoutProps
                 className="p-2 rounded-xl border border-border/60 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                 title="Toggle Theme"
               >
-                {theme === "dark" ? <Sun className="h-4 w-4 text-amber-400" /> : <Moon className="h-4 w-4" />}
+                {mounted && theme === "dark" ? <Sun className="h-4 w-4 text-amber-400" /> : <Moon className="h-4 w-4" />}
               </button>
             </div>
           </header>

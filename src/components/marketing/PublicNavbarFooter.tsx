@@ -27,8 +27,10 @@ export function PublicNavbar() {
   const { user } = useAuthStore();
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
     };
@@ -92,7 +94,11 @@ export function PublicNavbar() {
             className="p-2 rounded-xl border border-border/60 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
             title="Toggle theme"
           >
-            {theme === "dark" ? <Sun className="h-4.5 w-4.5 text-amber-400" /> : <Moon className="h-4.5 w-4.5" />}
+            {mounted && theme === "dark" ? (
+              <Sun className="h-4.5 w-4.5 text-amber-400" />
+            ) : (
+              <Moon className="h-4.5 w-4.5" />
+            )}
           </button>
 
           {user ? (
