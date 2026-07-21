@@ -137,11 +137,52 @@ export class PortfolioBillingEngine {
     }
   }
 
+  public static getSubscription(userId: string): UserSubscription {
+    return SubscriptionService.getUserSubscription(userId);
+  }
+
+  public static getPlan(planId: PlanId) {
+    return PlanService.getPlan(planId);
+  }
+
   public static recordUsage(
     userId: string,
     metric: keyof Omit<UserUsageRecord, "userId" | "periodStart" | "periodEnd">,
     amount: number = 1
   ): UserUsageRecord {
     return UsageService.recordUsage(userId, metric, amount);
+  }
+
+  public static incrementUsage(
+    userId: string,
+    metric: keyof Omit<UserUsageRecord, "userId" | "periodStart" | "periodEnd">,
+    amount: number = 1
+  ): UserUsageRecord {
+    return UsageService.incrementUsage(userId, metric, amount);
+  }
+
+  public static decrementUsage(
+    userId: string,
+    metric: keyof Omit<UserUsageRecord, "userId" | "periodStart" | "periodEnd">,
+    amount: number = 1
+  ): UserUsageRecord {
+    return UsageService.decrementUsage(userId, metric, amount);
+  }
+
+  public static validateLimits(
+    userId: string,
+    metric: keyof Omit<UserUsageRecord, "userId" | "periodStart" | "periodEnd">,
+    requestedAmount: number = 1,
+    maxLimit: number = 9999
+  ) {
+    return UsageService.validateLimits(userId, metric, requestedAmount, maxLimit);
+  }
+
+  public static getUsageThresholdAlert(
+    userId: string,
+    metric: keyof Omit<UserUsageRecord, "userId" | "periodStart" | "periodEnd">,
+    maxLimit: number
+  ) {
+    return UsageService.getUsageThresholdAlert(userId, metric, maxLimit);
   }
 }

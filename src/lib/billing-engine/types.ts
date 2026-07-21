@@ -88,7 +88,9 @@ export interface UserUsageRecord {
   storageMbUsed: number;
   customDomainsCount: number;
   publishingsCount: number;
+  resumesGenerated: number;
   resumesExported: number;
+  portfoliosExported: number;
   templatesUsedCount: number;
   analyticsViewsCount: number;
   apiRequestsCount: number;
