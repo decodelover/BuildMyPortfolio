@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { Sparkles, ArrowRight, Zap, CheckCircle2, Play, Globe, ShieldCheck, Star } from "lucide-react";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { Sparkles, ArrowRight, Zap, CheckCircle2, Globe, ShieldCheck, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function HeroSection() {
@@ -11,6 +11,26 @@ export function HeroSection() {
     "Senior Full-Stack Engineer with 5+ years of React, Next.js 15, and Cloud microservices experience..."
   );
   const [selectedRole, setSelectedRole] = useState("Developer");
+
+  // Simulated Typing Effect
+  const [typedText, setTypedText] = useState("");
+  const [isTyping, setIsTyping] = useState(true);
+
+  useEffect(() => {
+    let index = 0;
+    setTypedText("");
+    setIsTyping(true);
+    const interval = setInterval(() => {
+      if (index < activePrompt.length) {
+        setTypedText((prev) => prev + activePrompt.charAt(index));
+        index++;
+      } else {
+        setIsTyping(false);
+        clearInterval(interval);
+      }
+    }, 25);
+    return () => clearInterval(interval);
+  }, [activePrompt]);
 
   const roles = [
     { label: "Software Developer", prompt: "Senior Full-Stack Engineer with 5+ years of React, Next.js 15, and Cloud microservices experience..." },
@@ -21,14 +41,22 @@ export function HeroSection() {
 
   return (
     <section className="relative pt-12 sm:pt-20 pb-16 overflow-hidden text-center select-none">
-      {/* Glow Backdrops */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-gradient-to-tr from-primary/20 via-accent/15 to-transparent blur-[120px] pointer-events-none rounded-full" />
+      {/* Ambient Animated Glow Backdrops */}
+      <motion.div
+        animate={{
+          scale: [1, 1.15, 1],
+          opacity: [0.3, 0.5, 0.3],
+        }}
+        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] bg-gradient-to-tr from-primary/25 via-accent/20 to-purple-500/15 blur-[140px] pointer-events-none rounded-full"
+      />
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8 relative z-10">
         {/* Top Badge */}
         <motion.div
-          initial={{ opacity: 0, y: -10 }}
+          initial={{ opacity: 0, y: -15 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
           className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/30 bg-primary/10 text-primary text-xs font-extrabold uppercase tracking-wider shadow-sm backdrop-blur-md"
         >
           <Sparkles className="h-4 w-4 text-accent animate-pulse" />
@@ -38,9 +66,9 @@ export function HeroSection() {
         {/* Main Heading */}
         <div className="max-w-4xl mx-auto space-y-4">
           <motion.h1
-            initial={{ opacity: 0, y: 15 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.1 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
             className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-foreground leading-[1.1]"
           >
             Build Production-Ready <br className="hidden sm:inline" />
@@ -49,9 +77,9 @@ export function HeroSection() {
             </span>
           </motion.h1>
           <motion.p
-            initial={{ opacity: 0, y: 15 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.2 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
             className="text-base sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed font-medium"
           >
             The enterprise AI website builder engineered for developers, designers, and tech leaders. Auto-generate, compile, and deploy to live global CDNs.
@@ -60,9 +88,9 @@ export function HeroSection() {
 
         {/* CTA Buttons */}
         <motion.div
-          initial={{ opacity: 0, y: 15 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.3 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
           className="flex flex-wrap items-center justify-center gap-4 pt-2"
         >
           <Link
@@ -79,17 +107,17 @@ export function HeroSection() {
           </Link>
         </motion.div>
 
-        {/* Interactive Prompt Simulator Bar */}
+        {/* Interactive Prompt Simulator Bar with Live Typing Animation */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.4 }}
+          transition={{ duration: 0.7, delay: 0.4 }}
           className="max-w-3xl mx-auto pt-6"
         >
-          <div className="rounded-3xl border border-border/80 bg-card/90 p-4 sm:p-5 shadow-2xl backdrop-blur-2xl text-left space-y-4">
+          <div className="rounded-3xl border border-border/80 bg-card/90 p-4 sm:p-5 shadow-2xl backdrop-blur-2xl text-left space-y-4 hover:border-primary/50 transition-colors">
             <div className="flex items-center justify-between border-b border-border/40 pb-3">
               <span className="text-xs font-bold text-foreground flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary" /> Interactive AI Prompt Simulator
+                <Sparkles className="h-4 w-4 text-primary" /> Live AI Generation Simulator
               </span>
               <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-accent/20 text-accent uppercase tracking-wider">
                 Instant Generation
@@ -109,7 +137,7 @@ export function HeroSection() {
                   className={cn(
                     "px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer",
                     selectedRole === r.label
-                      ? "bg-primary text-primary-foreground shadow-xs"
+                      ? "bg-primary text-primary-foreground shadow-xs scale-105"
                       : "bg-muted/40 border border-border/50 text-muted-foreground hover:text-foreground"
                   )}
                 >
@@ -118,14 +146,12 @@ export function HeroSection() {
               ))}
             </div>
 
-            {/* Simulated Prompt Box */}
-            <div className="flex items-center gap-3 rounded-2xl border border-border/60 bg-background/80 p-3 shadow-inner">
-              <textarea
-                value={activePrompt}
-                onChange={(e) => setActivePrompt(e.target.value)}
-                rows={2}
-                className="w-full bg-transparent text-xs font-medium text-foreground focus:outline-none resize-none leading-relaxed"
-              />
+            {/* Live Typing Container */}
+            <div className="flex items-center gap-3 rounded-2xl border border-border/60 bg-background/80 p-3 shadow-inner min-h-[70px]">
+              <p className="w-full bg-transparent text-xs font-mono text-foreground leading-relaxed">
+                {typedText}
+                {isTyping && <span className="inline-block w-1.5 h-3.5 bg-primary ml-0.5 animate-pulse" />}
+              </p>
               <Link
                 href="/register"
                 className="h-10 px-4 rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold text-xs flex items-center gap-1.5 shrink-0 hover:opacity-90 transition-opacity cursor-pointer shadow-md"
@@ -137,7 +163,12 @@ export function HeroSection() {
         </motion.div>
 
         {/* Feature Badges */}
-        <div className="pt-8 flex flex-wrap items-center justify-center gap-6 text-xs font-bold text-muted-foreground">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, delay: 0.5 }}
+          className="pt-8 flex flex-wrap items-center justify-center gap-6 text-xs font-bold text-muted-foreground"
+        >
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-4.5 w-4.5 text-emerald-500" />
             <span>99.9% Live CDN Uptime SLA</span>
@@ -150,7 +181,7 @@ export function HeroSection() {
             <Star className="h-4.5 w-4.5 text-amber-500 fill-amber-500" />
             <span>Rated 4.9/5 by 28,000+ Creators</span>
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );

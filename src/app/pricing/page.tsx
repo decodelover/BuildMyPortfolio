@@ -5,7 +5,7 @@ import Link from "next/link";
 import Navbar from "@/components/layouts/navbar";
 import Footer from "@/components/layouts/footer";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, ChevronDown, Sparkles, CheckCircle2, ShieldCheck, HelpCircle } from "lucide-react";
+import { Check, ChevronDown, Sparkles, CheckCircle2, ShieldCheck, HelpCircle, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function PricingPage() {
@@ -15,60 +15,64 @@ export default function PricingPage() {
   const pricingPlans = [
     {
       id: "free",
-      name: "Starter",
+      name: "FREE STARTER",
       monthlyPrice: "$0",
       yearlyPrice: "$0",
-      description: "For developers and students launching their first portfolio.",
+      period: "Forever Free",
+      description: "Perfect for students and early stage developers starting their coding journey.",
       features: [
-        "1 Published Portfolio Website",
-        "Subdomain hosting (.buildmyportfolio.com)",
-        "500 Monthly AI Copywriting Credits",
+        "1 Active Portfolio Website",
+        "Subdomain hosting (name.buildmyportfolio.com)",
+        "Standard AI Copywriting Credits (500/mo)",
         "Standard Minimalist Theme",
         "Community Support",
       ],
-      cta: "Get Started Free",
+      cta: "Sign Up Free",
       popular: false,
     },
     {
       id: "pro",
-      name: "Professional",
-      monthlyPrice: "$29",
-      yearlyPrice: "$23",
-      description: "Recommended for software engineers, designers, and job seekers.",
+      name: "PROFESSIONAL PRO",
+      monthlyPrice: "$39",
+      yearlyPrice: "$31",
+      period: "Billed Annually",
+      description: "Our recommended plan for professional developers, designers, and active job seekers.",
       features: [
         "5 Active Published Portfolios",
-        "Custom Domain SSL Mapping",
-        "2,500 Monthly AI Credits",
-        "All Premium Themes (Cyberpunk, Brutalist, Creative)",
+        "Custom Domain Support + Free SSL",
+        "2,500 Monthly AI Copy Credits",
+        "Import PDF Resume & Sync GitHub",
         "Remove BuildMyPortfolio Branding",
-        "Automated Quality Assurance Audits",
+        "Automated Quality Assurance Scans",
+        "Traffic Analytics Dashboard",
       ],
       cta: "Start 14-Day Free Trial",
       popular: true,
       badge: "Most Popular",
     },
     {
-      id: "enterprise",
-      name: "Business / Agency",
+      id: "business",
+      name: "PREMIUM BUSINESS",
       monthlyPrice: "$79",
       yearlyPrice: "$63",
-      description: "Built for agencies, dev consultancies, and multi-client creators.",
+      period: "Billed Annually",
+      description: "Built for developer agencies, design houses, and contractors.",
       features: [
         "Unlimited Published Portfolios",
         "Unlimited Custom Domains",
         "10,000 Monthly AI Credits",
-        "Clean Source Code Export (.zip Next.js)",
+        "Export Clean Next.js React Code (.zip)",
         "White-label Client Admin Portals",
-        "Dedicated Support & Custom SLAs",
+        "24/7 Dedicated Support & Custom SLAs",
       ],
-      cta: "Contact Enterprise Sales",
+      cta: "Get Business Access",
       popular: false,
     },
   ];
 
   const pricingFaq = [
-    { q: "Can I use my own custom domain?", a: "Yes! Professional and Business plans support custom domain mapping with automatic SSL certificate provisioning." },
-    { q: "Can I export my source code?", a: "Yes. Business and Agency tier subscribers can export their compiled portfolio as a clean, ready-to-deploy Next.js 15 React codebase." },
+    { q: "Can I use my own custom domain name?", a: "Yes! Professional and Business plans support custom domain mapping with automatic SSL certificate provisioning." },
+    { q: "Can I export my portfolio source code?", a: "Yes. Business plan subscribers can export their compiled portfolio as a clean, ready-to-deploy Next.js 15 React codebase." },
     { q: "Is there a money-back guarantee?", a: "We offer a 14-day 100% money-back guarantee on all paid plans. No questions asked." },
   ];
 
@@ -98,11 +102,10 @@ export default function PricingPage() {
                 onClick={() => setBillingCycle(billingCycle === "monthly" ? "yearly" : "monthly")}
                 className="w-12 h-6 rounded-full bg-muted p-1 border border-border relative transition-colors cursor-pointer"
               >
-                <div
-                  className={cn(
-                    "h-4 w-4 rounded-full bg-primary transition-transform",
-                    billingCycle === "yearly" ? "translate-x-6" : "translate-x-0"
-                  )}
+                <motion.div
+                  animate={{ x: billingCycle === "yearly" ? 24 : 0 }}
+                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                  className="h-4 w-4 rounded-full bg-primary"
                 />
               </button>
               <span className={billingCycle === "yearly" ? "text-foreground" : "text-muted-foreground"}>
@@ -116,8 +119,10 @@ export default function PricingPage() {
             {pricingPlans.map((p) => {
               const price = billingCycle === "yearly" ? p.yearlyPrice : p.monthlyPrice;
               return (
-                <div
+                <motion.div
                   key={p.id}
+                  whileHover={{ y: -6 }}
+                  transition={{ duration: 0.2 }}
                   className={cn(
                     "rounded-3xl border p-8 shadow-sm backdrop-blur-2xl space-y-6 flex flex-col justify-between transition-all relative overflow-hidden text-left",
                     p.popular
@@ -163,7 +168,7 @@ export default function PricingPage() {
                   >
                     {p.cta}
                   </Link>
-                </div>
+                </motion.div>
               );
             })}
           </div>
