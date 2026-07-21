@@ -1,44 +1,36 @@
 import { UserSubscription, FeatureAccessResult } from "../types";
-import { PlanManager } from "../plans/plan-manager";
+import { PermissionService } from "../services/permission-service";
 
 export class FeatureGateManager {
   public static canAccess(
     subscription: UserSubscription,
     featureKey: string,
-    currentUsage: number = 0
+    _currentUsage: number = 0
   ): FeatureAccessResult {
-    const plan = PlanManager.getPlan(subscription.planId);
-    const limits = plan.limits;
-
     switch (featureKey) {
-      case "ai_generations": {
-        const limit = limits.aiCreditsPerMonth;
-        const allowed = currentUsage < limit;
-        return { allowed, currentUsage, limit, reason: allowed ? undefined : "AI generation monthly credit limit reached." };
-      }
-      case "portfolio_count": {
-        const limit = limits.portfoliosCount;
-        const allowed = currentUsage < limit;
-        return { allowed, currentUsage, limit, reason: allowed ? undefined : "Maximum portfolios count reached for your current plan." };
-      }
-      case "custom_domains": {
-        const limit = limits.customDomainsCount;
-        const allowed = currentUsage < limit;
-        return { allowed, currentUsage, limit, reason: allowed ? undefined : "Custom domain limit reached." };
-      }
-      case "publishing_count": {
-        const limit = limits.publishingCountPerMonth;
-        const allowed = currentUsage < limit;
-        return { allowed, currentUsage, limit, reason: allowed ? undefined : "Monthly publishing count limit reached." };
-      }
-      case "premium_themes": {
-        const allowed = limits.premiumThemes;
-        return { allowed, reason: allowed ? undefined : "Premium themes require a Starter or higher plan." };
-      }
-      case "api_access": {
-        const allowed = limits.apiAccess;
-        return { allowed, reason: allowed ? undefined : "API access requires a Business or Enterprise plan." };
-      }
+      case "ai_generations":
+      case "use_ai":
+        return PermissionService.canUseAI(subscription, null);
+      case "portfolio_count":
+      case "generate_portfolio":
+        return PermissionService.canGeneratePortfolio(subscription, null);
+      case "custom_domains":
+      case "connect_domain":
+        return PermissionService.canConnectDomain(subscription, null);
+      case "publishing_count":
+      case "publish_portfolio":
+        return PermissionService.canPublishPortfolio(subscription, null);
+      case "export_resume":
+        return PermissionService.canExportResume(subscription, null);
+      case "premium_themes":
+      case "premium_templates":
+        return PermissionService.canUsePremiumTemplates(subscription);
+      case "analytics":
+        return PermissionService.canAccessAnalytics(subscription);
+      case "custom_branding":
+        return PermissionService.canUseCustomBranding(subscription);
+      case "team_features":
+        return PermissionService.canUseTeamFeatures(subscription);
       default:
         return { allowed: true };
     }

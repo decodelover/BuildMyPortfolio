@@ -3,46 +3,46 @@ import {
   BillingInterval,
   PaymentProviderId,
   UserSubscription,
-  CheckoutSession,
   FeatureAccessResult,
-  Invoice
+  Invoice,
+  UserUsageRecord
 } from "../types";
-import { PaymentGatewayManager } from "../services/payment-gateway-manager";
-import { SubscriptionManager } from "../subscription/subscription-manager";
-import { FeatureGateManager } from "../feature-gating/feature-gate-manager";
-import { UsageTracker } from "../usage/usage-tracker";
-import { CouponEngine } from "../promotions/coupon-engine";
-import { InvoiceManager } from "../invoicing/invoice-manager";
-import { PlanManager } from "../plans/plan-manager";
-import { BillingLogger } from "../logging/billing-logger";
+import { SubscriptionService } from "../services/subscription-service";
+import { PermissionService } from "../services/permission-service";
+import { UsageService } from "../services/usage-service";
+import { PlanService } from "../services/plan-service";
+import { InvoiceService } from "../services/invoice-service";
+import { CustomerService } from "../services/customer-service";
+import { BillingEventBus } from "../events/billing-event-bus";
 
 export class PortfolioBillingEngine {
-  public static async initializeCheckout(
+  public static getUserSubscription(userId: string): UserSubscription {
+    return SubscriptionService.getUserSubscription(userId);
+  }
+
+  public static getUserUsage(userId: string): UserUsageRecord {
+    return UsageService.getUsage(userId);
+  }
+
+  public static changePlan(
     userId: string,
-    customerEmail: string,
-    planId: PlanId,
-    interval: BillingInterval = "monthly",
-    provider: PaymentProviderId = "stripe",
-    promoCode?: string
-  ): Promise<CheckoutSession> {
-    const logger = new BillingLogger();
-    logger.checkoutInitialized(userId, planId, provider);
-
-    let discountAmount = 0;
-    if (promoCode) {
-      const planPrice = PlanManager.calculatePrice(planId, interval);
-      const applied = CouponEngine.validateAndApplyCoupon(promoCode, planPrice, planId);
-      discountAmount = applied.discountAmount;
-    }
-
-    return await PaymentGatewayManager.createCheckoutSession(
-      userId,
-      customerEmail,
-      planId,
+    newPlanId: PlanId,
+    interval: BillingInterval = "monthly"
+  ): UserSubscription {
+    const previousSub = SubscriptionService.getUserSubscription(userId);
+    const updatedSub = SubscriptionService.updateSubscription(userId, {
+      planId: newPlanId,
       interval,
-      provider,
-      discountAmount
-    );
+      status: newPlanId === "FREE" ? "free" : "active",
+    });
+
+    BillingEventBus.emit(userId, "PlanChanged", {
+      previousPlanId: previousSub.planId,
+      newPlanId,
+      interval,
+    });
+
+    return updatedSub;
   }
 
   public static activateSubscription(
@@ -53,39 +53,95 @@ export class PortfolioBillingEngine {
     customerName: string,
     customerEmail: string
   ): { subscription: UserSubscription; invoice: Invoice } {
-    const subscription = SubscriptionManager.updateSubscription(userId, planId, interval, provider, "active");
-    const plan = PlanManager.getPlan(planId);
+    CustomerService.getOrCreateCustomer(userId, customerEmail, customerName);
 
-    const price = PlanManager.calculatePrice(planId, interval);
+    const subscription = SubscriptionService.updateSubscription(userId, {
+      planId,
+      interval,
+      provider,
+      status: "active",
+    });
 
-    const invoice = InvoiceManager.generateInvoice(
+    const plan = PlanService.getPlan(planId);
+    const price = interval === "yearly" ? plan.yearlyPriceUsd : plan.monthlyPriceUsd;
+
+    const invoice = InvoiceService.createInvoice({
       userId,
-      subscription.subscriptionId,
+      subscriptionId: subscription.subscriptionId,
       customerName,
       customerEmail,
-      [
+      items: [
         {
           id: `item-${planId}`,
           description: `${plan.name} Subscription (${interval})`,
           amount: price,
-          quantity: 1
-        }
-      ]
-    );
+          quantity: 1,
+        },
+      ],
+    });
+
+    BillingEventBus.emit(userId, "SubscriptionCreated", {
+      subscriptionId: subscription.subscriptionId,
+      planId,
+      interval,
+      provider,
+    });
+
+    BillingEventBus.emit(userId, "InvoiceGenerated", {
+      invoiceId: invoice.invoiceId,
+      total: invoice.total,
+    });
 
     return { subscription, invoice };
   }
 
+  public static cancelSubscription(userId: string, immediately: boolean = false): UserSubscription {
+    const canceled = SubscriptionService.cancelSubscription(userId, immediately);
+    BillingEventBus.emit(userId, "SubscriptionCancelled", {
+      subscriptionId: canceled.subscriptionId,
+      immediately,
+    });
+    return canceled;
+  }
+
   public static checkFeatureAccess(userId: string, featureKey: string): FeatureAccessResult {
-    const sub = SubscriptionManager.getUserSubscription(userId);
-    const usage = UsageTracker.getUsage(userId);
+    const sub = SubscriptionService.getUserSubscription(userId);
+    const usage = UsageService.getUsage(userId);
 
-    let currentUsage = 0;
-    if (featureKey === "ai_generations") currentUsage = usage.aiCreditsUsed;
-    if (featureKey === "portfolio_count") currentUsage = usage.portfoliosCount;
-    if (featureKey === "custom_domains") currentUsage = usage.customDomainsCount;
-    if (featureKey === "publishing_count") currentUsage = usage.publishingsCount;
+    switch (featureKey) {
+      case "generate_portfolio":
+      case "portfolio_count":
+        return PermissionService.canGeneratePortfolio(sub, usage);
+      case "publish_portfolio":
+      case "publishing_count":
+        return PermissionService.canPublishPortfolio(sub, usage);
+      case "use_ai":
+      case "ai_generations":
+        return PermissionService.canUseAI(sub, usage);
+      case "export_resume":
+        return PermissionService.canExportResume(sub, usage);
+      case "premium_templates":
+      case "premium_themes":
+        return PermissionService.canUsePremiumTemplates(sub);
+      case "connect_domain":
+      case "custom_domains":
+        return PermissionService.canConnectDomain(sub, usage);
+      case "analytics":
+        return PermissionService.canAccessAnalytics(sub);
+      case "custom_branding":
+        return PermissionService.canUseCustomBranding(sub);
+      case "team_features":
+        return PermissionService.canUseTeamFeatures(sub);
+      default:
+        return { allowed: true };
+    }
+  }
 
-    return FeatureGateManager.canAccess(sub, featureKey, currentUsage);
+  public static recordUsage(
+    userId: string,
+    metric: keyof Omit<UserUsageRecord, "userId" | "periodStart" | "periodEnd">,
+    amount: number = 1
+  ): UserUsageRecord {
+    return UsageService.recordUsage(userId, metric, amount);
   }
 }

@@ -7,14 +7,15 @@ import {
   CheckoutSession,
   Invoice,
   UserUsageRecord,
-  SubscriptionPlan
+  SubscriptionPlan,
+  FeatureAccessResult
 } from "@/lib/billing-engine/types";
 import { PortfolioBillingEngine } from "@/lib/billing-engine/engine/portfolio-billing-engine";
-import { SubscriptionManager } from "@/lib/billing-engine/subscription/subscription-manager";
-import { PlanManager } from "@/lib/billing-engine/plans/plan-manager";
-import { InvoiceManager } from "@/lib/billing-engine/invoicing/invoice-manager";
-import { UsageTracker } from "@/lib/billing-engine/usage/usage-tracker";
-import { CancellationManager } from "@/lib/billing-engine/subscription/cancellation-manager";
+import { SubscriptionService } from "@/lib/billing-engine/services/subscription-service";
+import { PlanDefinitions } from "@/lib/billing-engine/plans/plan-definitions";
+import { InvoiceService } from "@/lib/billing-engine/services/invoice-service";
+import { UsageService } from "@/lib/billing-engine/services/usage-service";
+import { PermissionService } from "@/lib/billing-engine/services/permission-service";
 
 export interface BillingEngineStoreState {
   subscription: UserSubscription | null;
@@ -28,15 +29,7 @@ export interface BillingEngineStoreState {
 
   // Actions
   loadUserBillingState: (userId: string) => void;
-  initializeCheckout: (
-    userId: string,
-    customerEmail: string,
-    planId: PlanId,
-    interval?: BillingInterval,
-    provider?: PaymentProviderId,
-    promoCode?: string
-  ) => Promise<CheckoutSession | null>;
-
+  changePlan: (userId: string, newPlanId: PlanId, interval?: BillingInterval) => void;
   activateSubscription: (
     userId: string,
     planId: PlanId,
@@ -45,55 +38,57 @@ export interface BillingEngineStoreState {
     customerName: string,
     customerEmail: string
   ) => void;
-
   cancelSubscription: (userId: string, immediately?: boolean) => void;
+  recordUsageMetric: (userId: string, metric: keyof Omit<UserUsageRecord, "userId" | "periodStart" | "periodEnd">, amount?: number) => void;
+
+  // Permission Checkers
   checkFeature: (userId: string, featureKey: string) => boolean;
+  canGeneratePortfolio: () => FeatureAccessResult;
+  canPublishPortfolio: () => FeatureAccessResult;
+  canUseAI: (requestedCredits?: number) => FeatureAccessResult;
+  canExportResume: () => FeatureAccessResult;
+  canUsePremiumTemplates: () => FeatureAccessResult;
+  canConnectDomain: () => FeatureAccessResult;
+  canAccessAnalytics: () => FeatureAccessResult;
+  canUseCustomBranding: () => FeatureAccessResult;
+  canUseTeamFeatures: () => FeatureAccessResult;
+
   resetBillingStore: () => void;
 }
 
-export const useBillingEngineStore = create<BillingEngineStoreState>((set, _get) => ({
+export const useBillingEngineStore = create<BillingEngineStoreState>((set, get) => ({
   subscription: null,
   activePlan: null,
   usage: null,
   invoices: [],
-  availablePlans: PlanManager.getAllPlans(),
+  availablePlans: PlanDefinitions.getAllPlans(),
   activeCheckoutSession: null,
   loading: false,
   error: null,
 
   loadUserBillingState: (userId) => {
     set({ loading: true });
-    const sub = SubscriptionManager.getUserSubscription(userId);
-    const plan = PlanManager.getPlan(sub.planId);
-    const usage = UsageTracker.getUsage(userId);
-    const invoices = InvoiceManager.getUserInvoices(userId);
+    const sub = SubscriptionService.getUserSubscription(userId);
+    const plan = PlanDefinitions.getPlan(sub.planId);
+    const usage = UsageService.getUsage(userId);
+    const invoices = InvoiceService.getUserInvoices(userId);
 
     set({
       subscription: sub,
       activePlan: plan,
       usage,
       invoices,
-      loading: false
+      loading: false,
     });
   },
 
-  initializeCheckout: async (userId, customerEmail, planId, interval = "monthly", provider = "stripe", promoCode) => {
-    set({ loading: true, error: null });
-    try {
-      const session = await PortfolioBillingEngine.initializeCheckout(
-        userId,
-        customerEmail,
-        planId,
-        interval,
-        provider,
-        promoCode
-      );
-      set({ activeCheckoutSession: session, loading: false });
-      return session;
-    } catch (err: any) {
-      set({ error: err.message || "Failed to initialize checkout session.", loading: false });
-      return null;
-    }
+  changePlan: (userId, newPlanId, interval = "monthly") => {
+    const updatedSub = PortfolioBillingEngine.changePlan(userId, newPlanId, interval);
+    const plan = PlanDefinitions.getPlan(newPlanId);
+    set({
+      subscription: updatedSub,
+      activePlan: plan,
+    });
   },
 
   activateSubscription: (userId, planId, interval, provider, customerName, customerEmail) => {
@@ -105,23 +100,74 @@ export const useBillingEngineStore = create<BillingEngineStoreState>((set, _get)
       customerName,
       customerEmail
     );
-    const plan = PlanManager.getPlan(planId);
+    const plan = PlanDefinitions.getPlan(planId);
     set((state) => ({
       subscription,
       activePlan: plan,
-      invoices: [invoice, ...state.invoices]
+      invoices: [invoice, ...state.invoices],
     }));
   },
 
   cancelSubscription: (userId, immediately = false) => {
-    const updated = CancellationManager.cancelSubscription(userId, immediately);
-    const plan = PlanManager.getPlan(updated.planId);
+    const updated = PortfolioBillingEngine.cancelSubscription(userId, immediately);
+    const plan = PlanDefinitions.getPlan(updated.planId);
     set({ subscription: updated, activePlan: plan });
   },
 
+  recordUsageMetric: (userId, metric, amount = 1) => {
+    const updatedUsage = PortfolioBillingEngine.recordUsage(userId, metric, amount);
+    set({ usage: updatedUsage });
+  },
+
+  // Permission Checkers using reactive store state
   checkFeature: (userId, featureKey) => {
     const result = PortfolioBillingEngine.checkFeatureAccess(userId, featureKey);
     return result.allowed;
+  },
+
+  canGeneratePortfolio: () => {
+    const { subscription, usage } = get();
+    return PermissionService.canGeneratePortfolio(subscription, usage);
+  },
+
+  canPublishPortfolio: () => {
+    const { subscription, usage } = get();
+    return PermissionService.canPublishPortfolio(subscription, usage);
+  },
+
+  canUseAI: (requestedCredits = 1) => {
+    const { subscription, usage } = get();
+    return PermissionService.canUseAI(subscription, usage, requestedCredits);
+  },
+
+  canExportResume: () => {
+    const { subscription, usage } = get();
+    return PermissionService.canExportResume(subscription, usage);
+  },
+
+  canUsePremiumTemplates: () => {
+    const { subscription } = get();
+    return PermissionService.canUsePremiumTemplates(subscription);
+  },
+
+  canConnectDomain: () => {
+    const { subscription, usage } = get();
+    return PermissionService.canConnectDomain(subscription, usage);
+  },
+
+  canAccessAnalytics: () => {
+    const { subscription } = get();
+    return PermissionService.canAccessAnalytics(subscription);
+  },
+
+  canUseCustomBranding: () => {
+    const { subscription } = get();
+    return PermissionService.canUseCustomBranding(subscription);
+  },
+
+  canUseTeamFeatures: () => {
+    const { subscription } = get();
+    return PermissionService.canUseTeamFeatures(subscription);
   },
 
   resetBillingStore: () => {
@@ -132,7 +178,7 @@ export const useBillingEngineStore = create<BillingEngineStoreState>((set, _get)
       invoices: [],
       activeCheckoutSession: null,
       loading: false,
-      error: null
+      error: null,
     });
-  }
+  },
 }));

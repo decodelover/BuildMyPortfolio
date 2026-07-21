@@ -1,17 +1,32 @@
-export type PaymentProviderId = "stripe" | "paystack" | "flutterwave";
+export type PaymentProviderId = "stripe" | "paystack" | "flutterwave" | "none";
 
-export type PlanId = "free" | "starter" | "professional" | "business" | "enterprise";
+export type PlanId =
+  | "FREE"
+  | "PRO"
+  | "BUSINESS"
+  | "free"
+  | "starter"
+  | "professional"
+  | "business"
+  | "enterprise";
 
 export type BillingInterval = "monthly" | "yearly";
 
 export type SubscriptionStatus =
-  | "trialing"
+  | "free"
+  | "trial"
   | "active"
   | "past_due"
+  | "grace_period"
+  | "cancelled"
+  | "expired"
+  | "suspended"
+  | "pending"
+  | "failed"
+  | "trialing"
   | "canceled"
   | "unpaid"
-  | "paused"
-  | "expired";
+  | "paused";
 
 export interface PlanLimits {
   portfoliosCount: number;
@@ -19,10 +34,14 @@ export interface PlanLimits {
   storageMb: number;
   customDomainsCount: number;
   publishingCountPerMonth: number;
+  resumeExportsPerMonth: number;
   teamMembersCount: number;
   apiAccess: boolean;
   premiumThemes: boolean;
   removeWatermark: boolean;
+  customBranding: boolean;
+  analyticsAccess: "basic" | "advanced" | "enterprise";
+  prioritySupport: "community" | "email" | "dedicated_24_7";
 }
 
 export interface SubscriptionPlan {
@@ -32,6 +51,7 @@ export interface SubscriptionPlan {
   monthlyPriceUsd: number;
   yearlyPriceUsd: number;
   currency: string;
+  features: string[];
   limits: PlanLimits;
   isPopular?: boolean;
 }
@@ -47,10 +67,11 @@ export interface UserSubscription {
   currentPeriodEnd: string;
   cancelAtPeriodEnd: boolean;
   canceledAt?: string;
+  gracePeriodEnd?: string;
   trialStart?: string;
   trialEnd?: string;
-  customerProviderId: string;
-  subscriptionProviderId: string;
+  customerProviderId?: string;
+  subscriptionProviderId?: string;
 }
 
 export interface FeatureAccessResult {
@@ -67,7 +88,40 @@ export interface UserUsageRecord {
   storageMbUsed: number;
   customDomainsCount: number;
   publishingsCount: number;
+  resumesExported: number;
+  templatesUsedCount: number;
+  analyticsViewsCount: number;
+  apiRequestsCount: number;
   periodStart: string;
+  periodEnd: string;
+}
+
+export interface CustomerRecord {
+  customerId: string;
+  userId: string;
+  email: string;
+  name: string;
+  billingAddress?: {
+    line1?: string;
+    city?: string;
+    country?: string;
+    postalCode?: string;
+  };
+  providerIds?: Partial<Record<PaymentProviderId, string>>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PaymentRecord {
+  paymentId: string;
+  userId: string;
+  subscriptionId: string;
+  amount: number;
+  currency: string;
+  status: "succeeded" | "failed" | "pending" | "refunded";
+  provider: PaymentProviderId;
+  providerTransactionId?: string;
+  createdAt: string;
 }
 
 export interface InvoiceItem {
@@ -110,7 +164,7 @@ export interface CheckoutSession {
 export interface Coupon {
   code: string;
   discountType: "percentage" | "fixed";
-  amount: number; // percentage (e.g. 20) or fixed amount in USD (e.g. 10)
+  amount: number;
   validUntil: string;
   maxRedemptions?: number;
   redemptionsCount: number;
@@ -126,4 +180,25 @@ export interface RefundRecord {
   reason: string;
   status: "succeeded" | "failed" | "pending";
   processedAt: string;
+}
+
+export type BillingEventType =
+  | "SubscriptionCreated"
+  | "SubscriptionRenewed"
+  | "SubscriptionCancelled"
+  | "PlanChanged"
+  | "UsageReset"
+  | "InvoiceGenerated"
+  | "PaymentRecorded"
+  | "TrialStarted"
+  | "TrialEnded"
+  | "FeatureUnlocked"
+  | "FeatureLocked";
+
+export interface BillingEvent {
+  eventId: string;
+  userId: string;
+  type: BillingEventType;
+  payload: Record<string, any>;
+  timestamp: string;
 }
