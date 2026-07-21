@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,6 +11,8 @@ import { PublicOnlyRoute } from "@/components/shared/protected-route";
 import { Sparkles, Eye, EyeOff, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FullPageLoader } from "@/components/shared/full-page-loader";
+import { checkRedirectAuthResult } from "@/lib/firebase/auth";
+import { syncUserProfile } from "@/lib/firebase/firestore";
 
 // Google Icon SVG
 function GoogleIcon({ className }: { className?: string }) {
@@ -57,8 +59,8 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [localLoading, setLocalLoading] = useState(false);
-  
-  const { login, loginWithGoogle, loginWithGithub } = useAuthStore();
+
+  const { login, loginWithGoogle, loginWithGithub, setUser } = useAuthStore();
 
   const {
     register,
@@ -72,6 +74,23 @@ function LoginForm() {
       rememberMe: false,
     },
   });
+
+  // Check for pending redirect sign-in results on component mount
+  useEffect(() => {
+    async function handleRedirectResult() {
+      try {
+        const redirectedUser = await checkRedirectAuthResult();
+        if (redirectedUser) {
+          const profile = await syncUserProfile(redirectedUser);
+          setUser(profile);
+          toast.success("Successfully logged in via redirect!");
+        }
+      } catch (err) {
+        console.warn("Redirect result handling error:", err);
+      }
+    }
+    handleRedirectResult();
+  }, [setUser]);
 
   const onSubmit = async (data: LoginFormValues) => {
     setLocalLoading(true);
@@ -89,8 +108,12 @@ function LoginForm() {
   const handleGoogleLogin = async () => {
     setLocalLoading(true);
     try {
-      await loginWithGoogle();
-      toast.success("Logged in with Google!");
+      const userDoc = await loginWithGoogle();
+      if (userDoc) {
+        toast.success("Logged in with Google!");
+      } else {
+        toast.info("Browser blocked popup. Redirecting to Google sign in...");
+      }
     } catch (error) {
       const err = error as Error;
       toast.error(err.message || "Google Authentication failed.");
@@ -102,8 +125,12 @@ function LoginForm() {
   const handleGithubLogin = async () => {
     setLocalLoading(true);
     try {
-      await loginWithGithub();
-      toast.success("Logged in with GitHub!");
+      const userDoc = await loginWithGithub();
+      if (userDoc) {
+        toast.success("Logged in with GitHub!");
+      } else {
+        toast.info("Browser blocked popup. Redirecting to GitHub sign in...");
+      }
     } catch (error) {
       const err = error as Error;
       toast.error(err.message || "GitHub Authentication failed.");
@@ -119,110 +146,84 @@ function LoginForm() {
         <div className="absolute top-1/4 left-1/4 h-80 w-80 rounded-full bg-primary/10 blur-3xl" />
         <div className="absolute bottom-1/4 right-1/4 h-80 w-80 rounded-full bg-accent/10 blur-3xl" />
 
-        <div className="relative w-full max-w-[440px] space-y-6 rounded-2xl border border-border bg-card/60 p-6 sm:p-8 shadow-xl backdrop-blur-md">
-          {/* Header branding */}
-          <div className="flex flex-col items-center text-center space-y-2">
-            <Link href="/" className="flex items-center gap-2 font-bold text-xl tracking-tight">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-tr from-primary to-accent text-primary-foreground shadow-md">
+        <div className="relative w-full max-w-md space-y-8 rounded-2xl border border-border/60 bg-card/80 p-8 shadow-xl backdrop-blur-xl transition-all">
+          {/* Logo & Header */}
+          <div className="text-center">
+            <Link href="/" className="inline-flex items-center gap-2 font-black text-2xl tracking-tight">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-primary to-accent text-primary-foreground shadow-md shadow-primary/20">
                 <Sparkles className="h-5 w-5" />
               </div>
-              <span className="bg-gradient-to-r from-primary via-foreground to-accent bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-foreground via-foreground to-muted-foreground bg-clip-text text-transparent">
                 BuildMyPortfolio
               </span>
             </Link>
-            <h2 className="text-xl font-bold tracking-tight text-foreground pt-3">
-              Welcome back
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Sign in to manage your AI portfolio generator
-            </p>
+            <h2 className="mt-4 text-xl font-bold tracking-tight text-foreground">Welcome back</h2>
+            <p className="mt-1 text-xs text-muted-foreground">Sign in to manage your AI portfolio generator</p>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            {/* Email input */}
-            <div className="space-y-1.5">
-              <label htmlFor="email" className="text-xs font-semibold text-muted-foreground">
-                Email Address
-              </label>
+          {/* Login Form */}
+          <form className="mt-6 space-y-4" onSubmit={handleSubmit(onSubmit)}>
+            <div>
+              <label className="block text-xs font-semibold text-foreground mb-1">Email Address</label>
               <input
-                id="email"
+                {...register("email")}
                 type="email"
                 placeholder="developer@buildmyportfolio.com"
-                disabled={localLoading}
                 className={cn(
-                  "w-full rounded-lg border border-border bg-background px-3.5 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/45 focus:border-primary disabled:opacity-50",
-                  errors.email && "border-destructive focus:ring-destructive/30"
+                  "w-full rounded-xl border bg-background px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all",
+                  errors.email ? "border-destructive focus:ring-destructive/40" : "border-border"
                 )}
-                {...register("email")}
               />
-              {errors.email && (
-                <p className="text-xs font-medium text-destructive">{errors.email.message}</p>
-              )}
+              {errors.email && <p className="mt-1 text-[11px] font-medium text-destructive">{errors.email.message}</p>}
             </div>
 
-            {/* Password input */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label htmlFor="password" className="text-xs font-semibold text-muted-foreground">
-                  Password
-                </label>
-                <Link
-                  href="/forgot-password"
-                  className="text-xs font-semibold text-primary hover:underline"
-                >
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-semibold text-foreground">Password</label>
+                <Link href="/forgot-password" className="text-xs text-primary hover:underline font-medium">
                   Forgot password?
                 </Link>
               </div>
               <div className="relative">
                 <input
-                  id="password"
+                  {...register("password")}
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  disabled={localLoading}
                   className={cn(
-                    "w-full rounded-lg border border-border bg-background pl-3.5 pr-10 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/45 focus:border-primary disabled:opacity-50",
-                    errors.password && "border-destructive focus:ring-destructive/30"
+                    "w-full rounded-xl border bg-background px-3.5 py-2.5 pr-10 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all",
+                    errors.password ? "border-destructive focus:ring-destructive/40" : "border-border"
                   )}
-                  {...register("password")}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-              {errors.password && (
-                <p className="text-xs font-medium text-destructive">{errors.password.message}</p>
-              )}
+              {errors.password && <p className="mt-1 text-[11px] font-medium text-destructive">{errors.password.message}</p>}
             </div>
 
-            {/* Remember Me */}
-            <div className="flex items-center space-x-2">
-              <input
-                id="rememberMe"
-                type="checkbox"
-                disabled={localLoading}
-                className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-                {...register("rememberMe")}
-              />
-              <label htmlFor="rememberMe" className="text-xs font-semibold text-muted-foreground">
-                Remember my session credentials
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  {...register("rememberMe")}
+                  type="checkbox"
+                  className="rounded border-border text-primary focus:ring-primary/40 h-4 w-4"
+                />
+                <span className="text-xs text-muted-foreground">Remember my session credentials</span>
               </label>
             </div>
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={localLoading}
-              className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/95 focus:outline-none focus:ring-2 focus:ring-primary/45 disabled:opacity-50 transition-colors mt-2"
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-accent py-2.5 text-xs font-bold text-primary-foreground shadow-md shadow-primary/20 hover:opacity-90 transition-all disabled:opacity-50 cursor-pointer"
             >
               {localLoading ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Authenticating...
+                  <Loader2 className="h-4 w-4 animate-spin" /> Logging in...
                 </>
               ) : (
                 "Log In to Dashboard"
@@ -230,44 +231,42 @@ function LoginForm() {
             </button>
           </form>
 
-          {/* Social Divider */}
-          <div className="relative flex py-2 items-center">
-            <div className="flex-grow border-t border-border" />
-            <span className="flex-shrink mx-4 text-xs font-semibold text-muted-foreground">
-              Or continue with
-            </span>
-            <div className="flex-grow border-t border-border" />
+          {/* Social Sign-In Divider */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center text-[10px] uppercase font-semibold">
+              <span className="bg-card px-3 text-muted-foreground">Or continue with</span>
+            </div>
           </div>
 
-          {/* Social Sign-In Grid */}
+          {/* Social Sign-In Buttons */}
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
               onClick={handleGoogleLogin}
               disabled={localLoading}
-              className="flex items-center justify-center gap-2 rounded-lg border border-border bg-background py-2 text-sm font-semibold hover:bg-muted/70 disabled:opacity-50 transition-colors"
+              className="flex items-center justify-center gap-2 rounded-xl border border-border bg-background py-2 px-3 text-xs font-semibold text-foreground shadow-xs hover:bg-muted transition-all disabled:opacity-50 cursor-pointer"
             >
-              <GoogleIcon className="h-4.5 w-4.5" />
-              Google
+              <GoogleIcon className="h-4 w-4" /> Google
             </button>
             <button
               type="button"
               onClick={handleGithubLogin}
               disabled={localLoading}
-              className="flex items-center justify-center gap-2 rounded-lg border border-border bg-background py-2 text-sm font-semibold hover:bg-muted/70 disabled:opacity-50 transition-colors"
+              className="flex items-center justify-center gap-2 rounded-xl border border-border bg-background py-2 px-3 text-xs font-semibold text-foreground shadow-xs hover:bg-muted transition-all disabled:opacity-50 cursor-pointer"
             >
-              <GitHubIcon className="h-4.5 w-4.5 text-foreground" />
-              GitHub
+              <GitHubIcon className="h-4 w-4" /> GitHub
             </button>
           </div>
 
-          {/* Sign Up Redirect */}
-          <div className="flex justify-center text-xs font-semibold text-muted-foreground pt-2">
-            Don&apos;t have an account?&nbsp;
-            <Link href="/register" className="text-primary hover:underline">
+          <p className="text-center text-xs text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/register" className="font-bold text-primary hover:underline">
               Create an account free
             </Link>
-          </div>
+          </p>
         </div>
       </div>
     </PublicOnlyRoute>
@@ -276,7 +275,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<FullPageLoader label="Loading authentication..." />}>
+    <Suspense fallback={<FullPageLoader label="Loading security session..." />}>
       <LoginForm />
     </Suspense>
   );

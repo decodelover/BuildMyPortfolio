@@ -3,6 +3,8 @@ import {
   GoogleAuthProvider,
   GithubAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut as firebaseSignOut,
   signInWithEmailAndPassword as firebaseSignInWithEmailAndPassword,
   createUserWithEmailAndPassword as firebaseCreateUserWithEmailAndPassword,
@@ -41,25 +43,46 @@ export async function loginWithEmail(email: string, pass: string) {
   }
 }
 
-// Google Sign-In
+// Google Sign-In (with popup-blocked fallback)
 export async function signInWithGoogle() {
   try {
     const result = await signInWithPopup(auth, googleProvider);
     return result.user;
-  } catch (error) {
-    console.error("Google authentication failed:", error);
+  } catch (error: any) {
+    console.warn("Google signInWithPopup error:", error?.code || error);
+    if (error?.code === "auth/popup-blocked" || error?.code === "auth/popup-closed-by-user") {
+      console.log("Popup blocked by browser. Falling back to redirect...");
+      await signInWithRedirect(auth, googleProvider);
+      return null;
+    }
     throw error;
   }
 }
 
-// GitHub Sign-In
+// GitHub Sign-In (with popup-blocked fallback)
 export async function signInWithGithub() {
   try {
     const result = await signInWithPopup(auth, githubProvider);
     return result.user;
-  } catch (error) {
-    console.error("GitHub authentication failed:", error);
+  } catch (error: any) {
+    console.warn("GitHub signInWithPopup error:", error?.code || error);
+    if (error?.code === "auth/popup-blocked" || error?.code === "auth/popup-closed-by-user") {
+      console.log("Popup blocked by browser. Falling back to redirect...");
+      await signInWithRedirect(auth, githubProvider);
+      return null;
+    }
     throw error;
+  }
+}
+
+// Check for pending redirect result on app mount
+export async function checkRedirectAuthResult() {
+  try {
+    const result = await getRedirectResult(auth);
+    return result?.user || null;
+  } catch (error) {
+    console.warn("Redirect result check error:", error);
+    return null;
   }
 }
 
@@ -98,7 +121,7 @@ export async function signOutUser() {
   try {
     await firebaseSignOut(auth);
   } catch (error) {
-    console.error("Firebase SignOut failed:", error);
+    console.error("Sign out failed:", error);
     throw error;
   }
 }

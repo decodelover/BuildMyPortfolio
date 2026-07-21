@@ -19,8 +19,8 @@ interface AuthState {
   setUser: (user: UserDocument | null) => void;
   setLoading: (loading: boolean) => void;
   login: (email: string, pass: string) => Promise<UserDocument>;
-  loginWithGoogle: () => Promise<UserDocument>;
-  loginWithGithub: () => Promise<UserDocument>;
+  loginWithGoogle: () => Promise<UserDocument | null>;
+  loginWithGithub: () => Promise<UserDocument | null>;
   register: (email: string, pass: string, fullName: string) => Promise<UserDocument>;
   logout: () => Promise<void>;
   updateUser: (data: Partial<Omit<UserDocument, "uid" | "createdAt" | "role" | "currentPlan">>) => Promise<void>;
@@ -30,7 +30,6 @@ interface AuthState {
 const setAuthCookies = (token: string, role: string) => {
   if (typeof window !== "undefined") {
     const secure = window.location.protocol === "https:" ? "Secure;" : "";
-    // Firebase Hosting uses '__session' cookie since it's the only one passed through Cloud Functions caching
     document.cookie = `__session=${token}; path=/; max-age=3600; ${secure} SameSite=Lax`;
     document.cookie = `token=${token}; path=/; max-age=3600; ${secure} SameSite=Lax`;
     document.cookie = `user_role=${role}; path=/; max-age=3600; ${secure} SameSite=Lax`;
@@ -71,6 +70,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ loading: true });
     try {
       const fbUser = await signInWithGoogle();
+      if (!fbUser) {
+        set({ loading: false });
+        return null;
+      }
       const profile = await syncUserProfile(fbUser);
       const token = await fbUser.getIdToken();
       setAuthCookies(token, profile.role);
@@ -86,6 +89,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ loading: true });
     try {
       const fbUser = await signInWithGithub();
+      if (!fbUser) {
+        set({ loading: false });
+        return null;
+      }
       const profile = await syncUserProfile(fbUser);
       const token = await fbUser.getIdToken();
       setAuthCookies(token, profile.role);
@@ -101,7 +108,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ loading: true });
     try {
       const fbUser = await registerWithEmail(email, pass);
-      // Wait for Firebase user object to resolve display name
       const profile = await syncUserProfile({
         uid: fbUser.uid,
         email: fbUser.email,
@@ -139,7 +145,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const updatedProfile = await getUserProfile(user.uid);
       set({ user: updatedProfile });
     } catch (error) {
-      console.error("Failed to update user profile store:", error);
       throw error;
     }
   },
