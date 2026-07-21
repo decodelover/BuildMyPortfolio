@@ -86,7 +86,7 @@ export function PublicNavbar() {
           })}
         </nav>
 
-        {/* Right CTA */}
+        {/* Desktop Right CTA */}
         <div className="hidden lg:flex items-center gap-3">
           <button
             type="button"
@@ -126,14 +126,29 @@ export function PublicNavbar() {
           )}
         </div>
 
-        {/* Mobile Hamburger */}
-        <button
-          type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          className="lg:hidden p-2 rounded-xl border border-border/60 text-muted-foreground hover:text-foreground cursor-pointer"
-        >
-          {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
+        {/* Mobile Actions: Theme Switcher Button Next to Hamburger */}
+        <div className="flex items-center gap-2 lg:hidden">
+          <button
+            type="button"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="p-2 rounded-xl border border-border/60 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+            title="Toggle theme"
+          >
+            {mounted && theme === "dark" ? (
+              <Sun className="h-4.5 w-4.5 text-amber-400" />
+            ) : (
+              <Moon className="h-4.5 w-4.5" />
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsOpen(!isOpen)}
+            className="p-2 rounded-xl border border-border/60 text-muted-foreground hover:text-foreground cursor-pointer"
+          >
+            {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Drawer */}
@@ -156,20 +171,32 @@ export function PublicNavbar() {
               </Link>
             ))}
             <div className="pt-3 border-t border-border/40 flex flex-col gap-2">
-              <Link
-                href="/login"
-                onClick={() => setIsOpen(false)}
-                className="w-full text-center py-2.5 rounded-xl border border-border/60 text-xs font-bold text-foreground"
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/register"
-                onClick={() => setIsOpen(false)}
-                className="w-full text-center py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-md"
-              >
-                Start Free
-              </Link>
+              {user ? (
+                <Link
+                  href="/dashboard"
+                  onClick={() => setIsOpen(false)}
+                  className="w-full text-center py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-md"
+                >
+                  Go to Workspace
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    onClick={() => setIsOpen(false)}
+                    className="w-full text-center py-2.5 rounded-xl border border-border/60 text-xs font-bold text-foreground"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/register"
+                    onClick={() => setIsOpen(false)}
+                    className="w-full text-center py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-md"
+                  >
+                    Start Free
+                  </Link>
+                </>
+              )}
             </div>
           </motion.div>
         )}
@@ -198,56 +225,87 @@ export function PublicFooter() {
               <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-primary to-accent text-primary-foreground shadow-sm">
                 <Sparkles className="h-4 w-4" />
               </div>
-              <span className="font-extrabold text-foreground">BuildMyPortfolio</span>
+              <span className="bg-gradient-to-r from-foreground via-foreground to-muted-foreground bg-clip-text text-transparent">
+                BuildMyPortfolio
+              </span>
             </Link>
-            <p className="text-xs text-muted-foreground max-w-sm leading-relaxed">
-              Enterprise AI website platform for software engineers, UX designers, and digital leaders. Auto-generate and deploy high-converting personal portfolios.
+            <p className="text-xs text-muted-foreground max-w-sm leading-relaxed font-medium">
+              Enterprise-grade AI portfolio compiler and design platform. Turn developer experience into production-ready Next.js sites in under 2 minutes.
             </p>
-            <div className="flex items-center gap-2 text-[10px] font-extrabold text-emerald-500">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              All Systems Operational (99.9% SLA)
+            <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-500">
+              <ShieldCheck className="h-4 w-4" /> 99.9% Global Edge Uptime SLA
             </div>
           </div>
 
           {/* Product Links */}
           <div className="space-y-3">
-            <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">Product</h4>
-            <ul className="space-y-2 text-muted-foreground">
-              <li><Link href="/features" className="hover:text-foreground">Features</Link></li>
-              <li><Link href="/showcase" className="hover:text-foreground">Showcase</Link></li>
-              <li><Link href="/templates" className="hover:text-foreground">Templates</Link></li>
-              <li><Link href="/pricing" className="hover:text-foreground">Pricing</Link></li>
+            <h4 className="font-extrabold text-foreground uppercase tracking-wider text-[11px]">Platform</h4>
+            <ul className="space-y-2 text-muted-foreground text-xs">
+              <li>
+                <Link href="/features" className="hover:text-foreground transition-colors">
+                  AI Generator
+                </Link>
+              </li>
+              <li>
+                <Link href="/templates" className="hover:text-foreground transition-colors">
+                  Glassmorphic Themes
+                </Link>
+              </li>
+              <li>
+                <Link href="/showcase" className="hover:text-foreground transition-colors">
+                  Developer Showcase
+                </Link>
+              </li>
+              <li>
+                <Link href="/pricing" className="hover:text-foreground transition-colors">
+                  Pricing Plans
+                </Link>
+              </li>
             </ul>
           </div>
 
           {/* Company Links */}
           <div className="space-y-3">
-            <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">Company</h4>
-            <ul className="space-y-2 text-muted-foreground">
-              <li><Link href="/about" className="hover:text-foreground">About Us</Link></li>
-              <li><Link href="/faq" className="hover:text-foreground">FAQ</Link></li>
-              <li><Link href="/contact" className="hover:text-foreground">Contact</Link></li>
-              <li><Link href="/terms" className="hover:text-foreground">Terms of Service</Link></li>
-              <li><Link href="/privacy" className="hover:text-foreground">Privacy Policy</Link></li>
+            <h4 className="font-extrabold text-foreground uppercase tracking-wider text-[11px]">Company</h4>
+            <ul className="space-y-2 text-muted-foreground text-xs">
+              <li>
+                <Link href="/about" className="hover:text-foreground transition-colors">
+                  About Us
+                </Link>
+              </li>
+              <li>
+                <Link href="/faq" className="hover:text-foreground transition-colors">
+                  FAQ &amp; Docs
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className="hover:text-foreground transition-colors">
+                  Contact Support
+                </Link>
+              </li>
+              <li>
+                <Link href="/privacy" className="hover:text-foreground transition-colors">
+                  Privacy Policy
+                </Link>
+              </li>
             </ul>
           </div>
 
-          {/* Newsletter Form */}
+          {/* Newsletter Col */}
           <div className="space-y-3">
-            <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">Stay Updated</h4>
-            <p className="text-[11px] text-muted-foreground">Get weekly AI copywriting and portfolio optimization tips.</p>
+            <h4 className="font-extrabold text-foreground uppercase tracking-wider text-[11px]">Stay Updated</h4>
+            <p className="text-xs text-muted-foreground">Subscribe for Next.js 15 portfolio tips &amp; feature updates.</p>
             <form onSubmit={handleSubscribe} className="space-y-2">
               <input
                 type="email"
-                required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="your@email.com"
-                className="w-full rounded-xl border border-border/60 bg-background/60 px-3.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary/45"
+                placeholder="developer@company.com"
+                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
               />
               <button
                 type="submit"
-                className="w-full py-2 rounded-xl bg-primary text-primary-foreground font-bold text-xs shadow-xs hover:opacity-90 transition-opacity"
+                className="w-full rounded-xl bg-primary py-2 text-xs font-bold text-primary-foreground shadow-xs hover:opacity-90 transition-opacity cursor-pointer"
               >
                 Subscribe
               </button>
@@ -255,12 +313,19 @@ export function PublicFooter() {
           </div>
         </div>
 
-        <div className="border-t border-border/40 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-muted-foreground">
-          <p>© {new Date().getFullYear()} BuildMyPortfolio Inc. All rights reserved.</p>
+        {/* Bottom copyright */}
+        <div className="border-t border-border/40 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-muted-foreground text-[11px]">
+          <p>&copy; {new Date().getFullYear()} BuildMyPortfolio Inc. All rights reserved.</p>
           <div className="flex items-center gap-4">
-            <Link href="/privacy" className="hover:text-foreground">Privacy</Link>
-            <Link href="/terms" className="hover:text-foreground">Terms</Link>
-            <Link href="/sitemap.xml" className="hover:text-foreground">Sitemap</Link>
+            <Link href="/terms" className="hover:text-foreground">
+              Terms
+            </Link>
+            <Link href="/privacy" className="hover:text-foreground">
+              Privacy
+            </Link>
+            <Link href="/sitemap.xml" className="hover:text-foreground">
+              Sitemap
+            </Link>
           </div>
         </div>
       </div>
