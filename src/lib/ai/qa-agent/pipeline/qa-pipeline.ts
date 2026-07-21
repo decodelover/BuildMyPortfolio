@@ -1,4 +1,4 @@
-import { QualityReport, QAPipelineStatus, QAContext, QAIssue } from "../types";
+import { QualityReport, QAPipelineStatus, QAIssue } from "../types";
 import { QaInputProcessor } from "../services/qa-input-processor";
 import { ContentQualityEngine } from "../engines/content-quality-engine";
 import { DesignQualityEngine } from "../engines/design-quality-engine";

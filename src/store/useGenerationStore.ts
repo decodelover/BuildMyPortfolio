@@ -20,7 +20,7 @@ export interface GenerationState {
 
 let unsubscribeSnapshot: (() => void) | null = null;
 
-export const useGenerationStore = create<GenerationState>((set, get) => ({
+export const useGenerationStore = create<GenerationState>((set, _get) => ({
   jobId: null,
   jobStatus: null,
   progress: 0,

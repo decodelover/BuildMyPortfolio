@@ -19,7 +19,7 @@ export class SEOAgent implements IAgent {
     };
   }
 
-  public async execute(input: AgentInput, context: GenerationContext): Promise<AgentOutput> {
+  public async execute(input: AgentInput, _context: GenerationContext): Promise<AgentOutput> {
     const seoInfo = input.websiteData.seoInfo || {};
     const personal = input.websiteData.personalInfo || {};
 

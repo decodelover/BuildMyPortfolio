@@ -25,7 +25,7 @@ export interface ContentAgentStoreState {
   resetAgent: () => void;
 }
 
-export const useContentAgentStore = create<ContentAgentStoreState>((set, get) => ({
+export const useContentAgentStore = create<ContentAgentStoreState>((set, _get) => ({
   pipelineStatus: "idle",
   progress: 0,
   currentTask: null,

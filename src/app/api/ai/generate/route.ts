@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/firebase/verifyToken";
-import { db } from "@/lib/firebase/firestore";
-import { doc, getDoc } from "firebase/firestore";
+import { adminDb } from "@/lib/firebase/admin";
+
 import { OrchestratorService } from "@/lib/ai/orchestrator/orchestrator-service";
 
 export const dynamic = "force-dynamic";
@@ -21,21 +21,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!adminDb) {
+      return NextResponse.json(
+        { error: "Internal server error: Database service unavailable." },
+        { status: 500 }
+      );
+    }
+
     // 3. Fetch Website Builder session details
-    const builderRef = doc(db, "websiteBuilders", builderId);
-    const builderSnap = await getDoc(builderRef);
-    if (!builderSnap.exists()) {
+    const builderRef = adminDb.collection("websiteBuilders").doc(builderId);
+    const builderSnap = await builderRef.get();
+    if (!builderSnap.exists) {
       return NextResponse.json({ error: "Website builder session not found." }, { status: 404 });
     }
-    const builderData = builderSnap.data();
+    const builderData = builderSnap.data() || {};
     if (builderData.userId !== uid) {
       return NextResponse.json({ error: "Unauthorized access to website builder draft." }, { status: 403 });
     }
 
     // 4. Fetch Generation Plan details
-    const planRef = doc(db, "websitePlans", planId);
-    const planSnap = await getDoc(planRef);
-    if (!planSnap.exists()) {
+    const planRef = adminDb.collection("websitePlans").doc(planId);
+    const planSnap = await planRef.get();
+    if (!planSnap.exists) {
       return NextResponse.json({ error: "Website generation plan not found." }, { status: 404 });
     }
     const planData = planSnap.data();
@@ -44,14 +51,13 @@ export async function POST(request: NextRequest) {
     const jobId = `job-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 
     // 6. Execute orchestration workflow asynchronously
-    // In serverless environments, this runs as a background promise while the client polls the Firestore state.
     OrchestratorService.executeWorkflow({
       jobId,
       userId: uid,
       builderId,
       planId,
       websiteData: builderData.websiteData || {},
-      plan: planData
+      plan: planData as any
     }).catch((err) => {
       console.error(`[Background Orchestration Error] Job ${jobId} execution failed:`, err);
     });

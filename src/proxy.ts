@@ -10,15 +10,16 @@ const adminPaths = ["/admin"];
 // Path prefixes that are only for unauthenticated users (e.g., login, register)
 const authPaths = ["/login", "/register", "/forgot-password"];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Retrieve user session identifier (token or session cookie)
   // Firebase Auth session cookie is traditionally named '__session' for Firebase Hosting compatibility
   const sessionToken = request.cookies.get("__session")?.value || request.cookies.get("token")?.value;
 
-  // Check user role from cookies
-  const isAdmin = request.cookies.get("user_role")?.value === "admin";
+  // Check user role from cookies (case-insensitive check for ADMIN)
+  const userRole = request.cookies.get("user_role")?.value?.toUpperCase();
+  const isAdmin = userRole === "ADMIN";
 
   const isProtected = protectedPaths.some((path) => pathname.startsWith(path));
   const isAdminRoute = adminPaths.some((path) => pathname.startsWith(path));

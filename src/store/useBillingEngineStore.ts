@@ -51,7 +51,7 @@ export interface BillingEngineStoreState {
   resetBillingStore: () => void;
 }
 
-export const useBillingEngineStore = create<BillingEngineStoreState>((set, get) => ({
+export const useBillingEngineStore = create<BillingEngineStoreState>((set, _get) => ({
   subscription: null,
   activePlan: null,
   usage: null,

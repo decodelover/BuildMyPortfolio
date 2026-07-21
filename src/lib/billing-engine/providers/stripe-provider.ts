@@ -9,8 +9,8 @@ export class StripePaymentProvider implements IPaymentProvider {
     customerEmail: string,
     planId: PlanId,
     interval: BillingInterval,
-    amount: number,
-    currency: string
+    _amount: number,
+    _currency: string
   ): Promise<CheckoutSession> {
     const sessionId = `cs_stripe_${Date.now()}_${Math.random().toString(36).substring(7)}`;
     const expiresAt = new Date(Date.now() + 3600 * 1000).toISOString();
@@ -27,7 +27,7 @@ export class StripePaymentProvider implements IPaymentProvider {
     };
   }
 
-  public async cancelSubscription(subscriptionProviderId: string): Promise<boolean> {
+  public async cancelSubscription(_subscriptionProviderId: string): Promise<boolean> {
     return true;
   }
 

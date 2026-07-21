@@ -25,7 +25,7 @@ export class CouponEngine {
     ]
   ]);
 
-  public static validateAndApplyCoupon(code: string, originalPrice: number, planId?: PlanId): { discountAmount: number; coupon: Coupon } {
+  public static validateAndApplyCoupon(code: string, originalPrice: number, _planId?: PlanId): { discountAmount: number; coupon: Coupon } {
     const coupon = this.coupons.get(code.toUpperCase());
     if (!coupon) {
       throw new InvalidCouponError(code, "Promo code does not exist.");

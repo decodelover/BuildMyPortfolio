@@ -1,4 +1,4 @@
-import { QAContext, QAScores } from "../types";
+import { QAContext } from "../types";
 import { QaInputError } from "../errors/qa-agent-errors";
 import { QaSanitizer } from "../security/qa-sanitizer";
 import { DataNormalizer } from "../../content-agent/services/data-normalizer";

@@ -1,4 +1,3 @@
-import { ThemeBlueprint } from "../../ai/compilation-engine/types";
 import { ThemeCSSVariables } from "../types";
 
 export class ThemeRenderer {

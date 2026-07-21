@@ -2,7 +2,7 @@ import { TechnicalSeoRules, SEOContext } from "../types";
 
 export class TechnicalSeoEngine {
   
-  public static resolve(context: SEOContext): TechnicalSeoRules {
+  public static resolve(_context: SEOContext): TechnicalSeoRules {
     const sitemapStructure = {
       priority: 0.9,
       changefreq: "weekly" as const,

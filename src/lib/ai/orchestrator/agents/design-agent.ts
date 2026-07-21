@@ -21,7 +21,7 @@ export class DesignAgent implements IAgent {
 
   public async execute(input: AgentInput, context: GenerationContext): Promise<AgentOutput> {
     // Access content agent's output from context to model visual styling layout
-    const contentResult = context.getAgentOutput<{ generatedContent: Record<string, any> }>("content");
+    const _contentResult = context.getAgentOutput<{ generatedContent: Record<string, any> }>("content");
     const prefs = input.websiteData.websitePreferences || {};
     
     // Resolve design tokens

@@ -1,4 +1,4 @@
-import { WorkflowDefinition, ExecutionPlan, ExecutionStage, TaskDefinition } from "../types";
+import { WorkflowDefinition, ExecutionPlan, ExecutionStage } from "../types";
 import { DependencyManager } from "./dependency-manager";
 
 export class ExecutionPlanner {

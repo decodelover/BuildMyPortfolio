@@ -10,7 +10,7 @@ export class CompilerAgent implements IAgent {
   public readonly description: string = "Compiles outputs from all previous agents into a single framework-independent Enterprise Portfolio Blueprint and WebsiteManifest.";
   public readonly dependencies: AgentId[] = ["content", "design", "seo", "qa"];
 
-  public validate(input: AgentInput): AgentValidationResult {
+  public validate(_input: AgentInput): AgentValidationResult {
     return {
       isValid: true,
       errors: []

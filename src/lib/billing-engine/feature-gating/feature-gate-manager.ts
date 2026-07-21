@@ -1,4 +1,4 @@
-import { UserSubscription, FeatureAccessResult, UserUsageRecord } from "../types";
+import { UserSubscription, FeatureAccessResult } from "../types";
 import { PlanManager } from "../plans/plan-manager";
 
 export class FeatureGateManager {

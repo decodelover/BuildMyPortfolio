@@ -1,5 +1,4 @@
 import { SEOBlueprint } from "../types";
-import { SeoInputError } from "../errors/seo-agent-errors";
 
 export class SeoValidators {
   

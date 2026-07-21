@@ -81,7 +81,7 @@ export class SecurityValidationEngine {
       if (!url) return;
       try {
         QaSanitizer.sanitizeUrl(url);
-      } catch (err: any) {
+      } catch (_err: any) {
         deductPoints(25);
         issues.push({
           id: `security-dangerous-url-${path.replace(/[\[\].]/g, "-")}`,

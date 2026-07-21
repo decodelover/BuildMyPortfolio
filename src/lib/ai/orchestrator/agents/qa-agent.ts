@@ -21,7 +21,7 @@ export class QAAgent implements IAgent {
   }
 
   public async execute(input: AgentInput, context: GenerationContext): Promise<AgentOutput> {
-    const contentOut = context.getAgentOutput<any>("content");
+    const _contentOut = context.getAgentOutput<any>("content");
     const designOut = context.getAgentOutput<any>("design");
     const seoOut = context.getAgentOutput<any>("seo");
 

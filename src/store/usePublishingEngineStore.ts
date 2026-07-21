@@ -32,7 +32,7 @@ export interface PublishingEngineStoreState {
   resetPublishingStore: () => void;
 }
 
-export const usePublishingEngineStore = create<PublishingEngineStoreState>((set, get) => ({
+export const usePublishingEngineStore = create<PublishingEngineStoreState>((set, _get) => ({
   publishingStatus: "idle",
   lastReport: null,
   releaseHistory: [],

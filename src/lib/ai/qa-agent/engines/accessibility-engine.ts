@@ -14,7 +14,7 @@ export class AccessibilityEngine {
 
     // 1. Image ALT text coverage verification
     if (normalized.projects) {
-      const missingAltCount = normalized.projects.filter(p => p.imageUrl && !p.title).length; // simple check logic
+      const _missingAltCount = normalized.projects.filter(p => p.imageUrl && !p.title).length; // simple check logic
       const seo = context.seoBlueprint;
       if (seo?.accessibility?.imageAltTextStatus && !seo.accessibility.imageAltTextStatus.hasAlt) {
         deductPoints(15);

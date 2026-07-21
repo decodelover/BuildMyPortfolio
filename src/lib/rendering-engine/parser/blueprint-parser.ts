@@ -1,4 +1,3 @@
-import { PortfolioBlueprint, BlueprintNode } from "../../ai/compilation-engine/types";
 import { RenderContext, NormalizedSectionNode } from "../types";
 import { ThemeRenderer } from "../renderers/theme-renderer";
 import { AnimationRenderer } from "../renderers/animation-renderer";

@@ -22,7 +22,7 @@ export class ContentAgent implements IAgent {
     };
   }
 
-  public async execute(input: AgentInput, context: GenerationContext): Promise<AgentOutput> {
+  public async execute(input: AgentInput, _context: GenerationContext): Promise<AgentOutput> {
     const personal = input.websiteData.personalInfo || {};
     const story = input.websiteData.professionalStory || {};
     const services = input.websiteData.services || {};

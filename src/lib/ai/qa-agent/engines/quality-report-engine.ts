@@ -1,4 +1,4 @@
-import { QAContext, QualityReport, QAIssue, QAScores } from "../types";
+import { QualityReport, QAIssue, QAScores } from "../types";
 import { QaAgentConfig } from "../config/qa-agent-config";
 
 export class QualityReportEngine {

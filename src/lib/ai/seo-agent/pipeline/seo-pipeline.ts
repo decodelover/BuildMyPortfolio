@@ -1,4 +1,4 @@
-import { SEOBlueprint, SeoPipelineStatus, SEOContext } from "../types";
+import { SEOBlueprint, SeoPipelineStatus } from "../types";
 import { SeoInputProcessor } from "../services/seo-input-processor";
 import { MetadataEngine } from "../engines/metadata-engine";
 import { StructuredDataEngine } from "../engines/structured-data-engine";

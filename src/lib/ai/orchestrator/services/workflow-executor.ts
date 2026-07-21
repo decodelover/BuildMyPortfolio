@@ -1,8 +1,6 @@
 import {
   ExecutionPlan,
-  WorkflowResult,
-  WorkflowType,
-  AgentOutput
+  WorkflowResult
 } from "../types";
 import { ExecutionContext } from "../context/execution-context";
 import { ParallelExecutionManager } from "./parallel-execution-manager";
@@ -11,7 +9,6 @@ import { OrchestrationLogger } from "../logging/orchestration-logger";
 import { OrchestrationMetricsCollector } from "../metrics/orchestration-metrics";
 import { WorkflowEventBus } from "../events/workflow-event-bus";
 import { OrchestrationConfig } from "../config/orchestration-config";
-import { TaskExecutionError } from "../errors/orchestration-errors";
 
 export class WorkflowExecutor {
   public static async executePlan(
@@ -57,7 +54,7 @@ export class WorkflowExecutor {
         const stageStartTime = Date.now();
 
         // Execute stage tasks in parallel or serial via ParallelExecutionManager
-        const stageResults = await ParallelExecutionManager.executeStage(stage, context, logger, eventBus);
+        const _stageResults = await ParallelExecutionManager.executeStage(stage, context, logger, eventBus);
 
         stage.tasks.forEach((t) => {
           completedTaskIds.add(t.id);

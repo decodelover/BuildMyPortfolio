@@ -58,8 +58,8 @@ export class PortfolioPublishingEngine {
 
       // 6. Generate SEO Publication Assets
       const routes = blueprintInput.navigation?.routes || [{ path: "/" }];
-      const sitemapXml = SitemapGenerator.generateSitemapXML(routes, deployment.url);
-      const robotsTxt = RobotsGenerator.generateRobotsTxt(deployment.url, true);
+      const _sitemapXml = SitemapGenerator.generateSitemapXML(routes, deployment.url);
+      const _robotsTxt = RobotsGenerator.generateRobotsTxt(deployment.url, true);
 
       const sitemapUrl = `${deployment.url}/sitemap.xml`;
       const robotsTxtUrl = `${deployment.url}/robots.txt`;

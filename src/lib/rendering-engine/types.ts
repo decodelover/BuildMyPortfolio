@@ -1,4 +1,4 @@
-import { PortfolioBlueprint, BlueprintNode, AssetRef, ThemeBlueprint, CompiledSEOBlueprint } from "../ai/compilation-engine/types";
+import { AssetRef, ThemeBlueprint, CompiledSEOBlueprint } from "../ai/compilation-engine/types";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Render Context & State Types
