@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useBillingEngineStore } from "@/store/useBillingEngineStore";
 import { useAuthStore } from "@/store/useAuthStore";
+import { auth } from "@/lib/firebase/auth";
 import { CheckCircle2, Sparkles, X, ArrowUpRight, ShieldCheck } from "lucide-react";
 import { PlanId } from "@/lib/billing-engine/types";
 import { toast } from "sonner";
@@ -18,7 +19,7 @@ export function UpgradeModal({
   isOpen,
   onClose,
   title = "Upgrade Your Subscription Plan",
-  description = "Unlock higher limits, premium templates, custom domains, and AI generation features.",
+  description = "Unlock higher limits, premium templates, custom domains, and AI generation features via Paystack.",
 }: UpgradeModalProps) {
   const { availablePlans, changePlan } = useBillingEngineStore();
   const { user } = useAuthStore();
@@ -30,12 +31,38 @@ export function UpgradeModal({
     if (!user) return;
     setLoadingPlan(planId);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      changePlan(user.uid, planId, "monthly");
-      toast.success(`Plan updated to ${planId}! Your features have been unlocked.`);
-      onClose();
+      if (planId === "FREE") {
+        changePlan(user.uid, "FREE", "monthly");
+        toast.success("Switched to Free Plan tier.");
+        onClose();
+        return;
+      }
+
+      const idToken = await auth.currentUser?.getIdToken();
+      const response = await fetch("/api/billing/paystack/initialize", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${idToken || ""}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          planId,
+          interval: "monthly",
+          email: user.email,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.session?.checkoutUrl) {
+        toast.success("Redirecting to Paystack payment gateway...");
+        window.location.assign(data.session.checkoutUrl);
+      } else {
+        changePlan(user.uid, planId, "monthly");
+        toast.success(`Plan updated to ${planId}!`);
+        onClose();
+      }
     } catch (_err) {
-      toast.error("Failed to update plan tier.");
+      toast.error("Failed to initiate Paystack payment transaction.");
     } finally {
       setLoadingPlan(null);
     }
@@ -54,7 +81,7 @@ export function UpgradeModal({
         <div className="text-center space-y-2 max-w-xl mx-auto">
           <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary border border-primary/20">
             <Sparkles className="h-3.5 w-3.5" />
-            <span>Monetization Tier Matrix</span>
+            <span>Paystack Secured Monetization</span>
           </div>
           <h2 className="text-2xl font-black tracking-tight text-foreground">{title}</h2>
           <p className="text-xs text-muted-foreground leading-relaxed">{description}</p>
@@ -117,10 +144,10 @@ export function UpgradeModal({
                       <ShieldCheck className="h-3.5 w-3.5" /> Current Plan
                     </span>
                   ) : loadingPlan === plan.planId ? (
-                    "Updating..."
+                    "Connecting Paystack..."
                   ) : (
                     <>
-                      Select {plan.name}
+                      Pay via Paystack ({plan.name})
                       <ArrowUpRight className="h-3.5 w-3.5" />
                     </>
                   )}

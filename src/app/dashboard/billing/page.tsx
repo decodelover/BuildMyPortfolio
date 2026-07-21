@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
+import { auth } from "@/lib/firebase/auth";
 import { useBillingEngineStore } from "@/store/useBillingEngineStore";
 import { UsageProgressBar } from "@/components/dashboard/usage-progress-bar";
 import { UpgradeModal } from "@/components/shared/upgrade-modal";
@@ -17,8 +19,10 @@ export default function BillingPage() {
     invoices,
     availablePlans,
     loadUserBillingState,
-    changePlan,
   } = useBillingEngineStore();
+
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
@@ -29,15 +33,77 @@ export default function BillingPage() {
     }
   }, [user?.uid, loadUserBillingState]);
 
+  // Handle Paystack payment redirect verification callback
+  useEffect(() => {
+    const reference = searchParams.get("reference") || searchParams.get("paystack_ref");
+    const planId = searchParams.get("planId") || "PRO";
+    const interval = searchParams.get("interval") || "monthly";
+
+    if (reference && user) {
+      const verifyPaystackPayment = async () => {
+        try {
+          toast.loading("Verifying Paystack transaction status...");
+          const idToken = await auth.currentUser?.getIdToken();
+
+          const response = await fetch("/api/billing/paystack/verify", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${idToken || ""}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ reference, planId, interval }),
+          });
+
+          const data = await response.json();
+          toast.dismiss();
+
+          if (data.status === "success") {
+            toast.success("Payment verified! Subscription activated successfully.");
+            loadUserBillingState(user.uid);
+            router.replace("/dashboard/billing");
+          } else {
+            toast.error(data.error || "Payment verification failed.");
+          }
+        } catch (err) {
+          toast.dismiss();
+          toast.error("Failed to complete Paystack payment verification.");
+        }
+      };
+
+      verifyPaystackPayment();
+    }
+  }, [searchParams, user, loadUserBillingState, router]);
+
   const handleUpgrade = async (planId: PlanId) => {
     if (!user) return;
     setLoadingPlan(planId);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      changePlan(user.uid, planId, "monthly");
-      toast.success(`Plan updated to ${planId}! Your limits have been expanded.`);
-    } catch (err) {
-      toast.error("Failed to upgrade subscription plan.");
+      if (planId === "FREE") {
+        toast.info("Free plan is already active.");
+        return;
+      }
+
+      const idToken = await auth.currentUser?.getIdToken();
+      const response = await fetch("/api/billing/paystack/initialize", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${idToken || ""}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          planId,
+          interval: "monthly",
+          email: user.email,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.session?.checkoutUrl) {
+        toast.success("Redirecting to Paystack payment portal...");
+        window.location.assign(data.session.checkoutUrl);
+      }
+    } catch (_err) {
+      toast.error("Failed to initiate Paystack payment checkout.");
     } finally {
       setLoadingPlan(null);
     }
@@ -58,7 +124,7 @@ export default function BillingPage() {
         <div className="space-y-1">
           <h1 className="text-2xl font-extrabold tracking-tight">Billing &amp; Subscription</h1>
           <p className="text-sm text-muted-foreground">
-            Manage your plan tier, usage quotas, invoice logs, and feature access permissions.
+            Manage your Paystack subscription membership, usage limits, and payment receipts.
           </p>
         </div>
 
@@ -82,7 +148,7 @@ export default function BillingPage() {
             <div className="flex items-center gap-2 mt-0.5">
               <h2 className="text-xl font-black text-foreground">{activePlan?.name || "FREE"}</h2>
               <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-extrabold text-primary uppercase border border-primary/20">
-                {subscription?.status || "active"}
+                {subscription?.provider === "paystack" ? "Paystack Active" : subscription?.status || "active"}
               </span>
             </div>
           </div>
@@ -168,10 +234,10 @@ export default function BillingPage() {
                       <ShieldCheck className="h-3.5 w-3.5" /> Current Active Tier
                     </span>
                   ) : loadingPlan === plan.planId ? (
-                    "Updating..."
+                    "Connecting..."
                   ) : (
                     <>
-                      Switch to {plan.name}
+                      Pay via Paystack ({plan.name})
                       <ArrowUpRight className="h-3.5 w-3.5" />
                     </>
                   )}
