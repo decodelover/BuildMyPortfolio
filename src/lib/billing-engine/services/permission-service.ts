@@ -12,7 +12,18 @@ export class PermissionService {
   }
 
   /**
-   * Verify if user can generate another portfolio
+   * Verify if user can access the primary dashboard
+   */
+  public static canAccessDashboard(subscription: UserSubscription | null): FeatureAccessResult {
+    const allowed = this.isSubscriptionOperational(subscription);
+    return {
+      allowed,
+      reason: allowed ? undefined : "Account suspended or inactive. Please renew your subscription to access the dashboard.",
+    };
+  }
+
+  /**
+   * Verify if user can create / generate another portfolio
    */
   public static canGeneratePortfolio(
     subscription: UserSubscription | null,
@@ -27,8 +38,22 @@ export class PermissionService {
       allowed,
       currentUsage: currentCount,
       limit,
-      reason: allowed ? undefined : `Portfolio limit reached (${currentCount}/${limit}). Upgrade your plan to generate more portfolios.`,
+      reason: allowed
+        ? undefined
+        : `Portfolio limit reached (${currentCount}/${limit}). Upgrade your plan to generate more portfolios.`,
     };
+  }
+
+  public static canCreatePortfolio(
+    subscription: UserSubscription | null,
+    usage: UserUsageRecord | null
+  ): FeatureAccessResult {
+    return this.canGeneratePortfolio(subscription, usage);
+  }
+
+  public static canDeletePortfolio(subscription: UserSubscription | null): FeatureAccessResult {
+    const allowed = this.isSubscriptionOperational(subscription);
+    return { allowed };
   }
 
   /**
@@ -47,7 +72,9 @@ export class PermissionService {
       allowed,
       currentUsage: currentCount,
       limit,
-      reason: allowed ? undefined : `Monthly publishing limit reached (${currentCount}/${limit}). Upgrade your plan for higher publishing quota.`,
+      reason: allowed
+        ? undefined
+        : `Monthly publishing limit reached (${currentCount}/${limit}). Upgrade your plan for higher publishing quota.`,
     };
   }
 
@@ -62,13 +89,28 @@ export class PermissionService {
     const plan = PlanDefinitions.getPlan(subscription?.planId || "FREE");
     const currentUsed = usage?.aiCreditsUsed || 0;
     const limit = plan.limits.aiCreditsPerMonth;
-    const allowed = this.isSubscriptionOperational(subscription) && (currentUsed + requestedCredits <= limit);
+    const allowed = this.isSubscriptionOperational(subscription) && currentUsed + requestedCredits <= limit;
 
     return {
       allowed,
       currentUsage: currentUsed,
       limit,
-      reason: allowed ? undefined : `Insufficient monthly AI credits (${currentUsed}/${limit}). Upgrade your plan for additional AI credits.`,
+      reason: allowed
+        ? undefined
+        : `Insufficient monthly AI credits (${currentUsed}/${limit}). Upgrade your plan for additional AI credits.`,
+    };
+  }
+
+  /**
+   * Verify if user can use Advanced AI / High Priority Queue
+   */
+  public static canUseAdvancedAI(subscription: UserSubscription | null): FeatureAccessResult {
+    const plan = PlanDefinitions.getPlan(subscription?.planId || "FREE");
+    const allowed = this.isSubscriptionOperational(subscription) && (plan.planId === "PRO" || plan.planId === "BUSINESS");
+
+    return {
+      allowed,
+      reason: allowed ? undefined : "Advanced AI features require a PRO or BUSINESS plan.",
     };
   }
 
@@ -88,12 +130,21 @@ export class PermissionService {
       allowed,
       currentUsage: currentCount,
       limit,
-      reason: allowed ? undefined : `Monthly resume export limit reached (${currentCount}/${limit}). Upgrade your plan to export more resumes.`,
+      reason: allowed
+        ? undefined
+        : `Monthly resume export limit reached (${currentCount}/${limit}). Upgrade your plan to export more resumes.`,
     };
   }
 
+  public static canGenerateResume(
+    subscription: UserSubscription | null,
+    usage: UserUsageRecord | null
+  ): FeatureAccessResult {
+    return this.canExportResume(subscription, usage);
+  }
+
   /**
-   * Verify if user can access premium themes
+   * Verify if user can access premium templates
    */
   public static canUsePremiumTemplates(subscription: UserSubscription | null): FeatureAccessResult {
     const plan = PlanDefinitions.getPlan(subscription?.planId || "FREE");
@@ -101,7 +152,7 @@ export class PermissionService {
 
     return {
       allowed,
-      reason: allowed ? undefined : "Premium themes require a PRO or BUSINESS subscription.",
+      reason: allowed ? undefined : "Premium templates require a PRO or BUSINESS subscription.",
     };
   }
 
@@ -115,7 +166,8 @@ export class PermissionService {
     const plan = PlanDefinitions.getPlan(subscription?.planId || "FREE");
     const currentCount = usage?.customDomainsCount || 0;
     const limit = plan.limits.customDomainsCount;
-    const allowed = this.isSubscriptionOperational(subscription) && plan.limits.customDomainsCount > 0 && currentCount < limit;
+    const allowed =
+      this.isSubscriptionOperational(subscription) && plan.limits.customDomainsCount > 0 && currentCount < limit;
 
     return {
       allowed,
@@ -126,42 +178,96 @@ export class PermissionService {
   }
 
   /**
-   * Verify if user can access analytics dashboard
+   * Verify if user can access analytics dashboard & SEO tools
    */
-  public static canAccessAnalytics(subscription: UserSubscription | null): FeatureAccessResult {
-    const _plan = PlanDefinitions.getPlan(subscription?.planId || "FREE");
+  public static canUseAnalytics(subscription: UserSubscription | null): FeatureAccessResult {
     const allowed = this.isSubscriptionOperational(subscription);
-
     return {
       allowed,
       reason: allowed ? undefined : "Analytics dashboard access requires an active plan.",
     };
   }
 
-  /**
-   * Verify if user can remove watermarks / use custom branding
-   */
-  public static canUseCustomBranding(subscription: UserSubscription | null): FeatureAccessResult {
+  public static canAccessAnalytics(subscription: UserSubscription | null): FeatureAccessResult {
+    return this.canUseAnalytics(subscription);
+  }
+
+  public static canUseSEO(subscription: UserSubscription | null): FeatureAccessResult {
     const plan = PlanDefinitions.getPlan(subscription?.planId || "FREE");
-    const allowed = this.isSubscriptionOperational(subscription) && plan.limits.customBranding;
+    const allowed = this.isSubscriptionOperational(subscription) && (plan.planId === "PRO" || plan.planId === "BUSINESS");
 
     return {
       allowed,
-      reason: allowed ? undefined : "Custom whitelabel branding requires a BUSINESS subscription.",
+      reason: allowed ? undefined : "Advanced SEO optimization requires a PRO or BUSINESS plan.",
     };
   }
 
   /**
-   * Verify if user can use team collaboration features
+   * Verify if user can remove watermarks / use custom branding
    */
-  public static canUseTeamFeatures(subscription: UserSubscription | null): FeatureAccessResult {
+  public static canRemoveBranding(subscription: UserSubscription | null): FeatureAccessResult {
+    const plan = PlanDefinitions.getPlan(subscription?.planId || "FREE");
+    const allowed = this.isSubscriptionOperational(subscription) && plan.limits.removeWatermark;
+
+    return {
+      allowed,
+      reason: allowed ? undefined : "Removing BuildMyPortfolio branding requires a PRO or BUSINESS plan.",
+    };
+  }
+
+  public static canUseCustomBranding(subscription: UserSubscription | null): FeatureAccessResult {
+    return this.canRemoveBranding(subscription);
+  }
+
+  /**
+   * Verify portfolio version history access
+   */
+  public static canUseVersionHistory(subscription: UserSubscription | null): FeatureAccessResult {
+    const plan = PlanDefinitions.getPlan(subscription?.planId || "FREE");
+    const allowed = this.isSubscriptionOperational(subscription) && (plan.planId === "PRO" || plan.planId === "BUSINESS");
+
+    return {
+      allowed,
+      reason: allowed ? undefined : "Portfolio version history requires a PRO or BUSINESS plan.",
+    };
+  }
+
+  /**
+   * Verify template marketplace access
+   */
+  public static canAccessMarketplace(subscription: UserSubscription | null): FeatureAccessResult {
+    const allowed = this.isSubscriptionOperational(subscription);
+    return { allowed };
+  }
+
+  /**
+   * Verify team workspace & collaboration access
+   */
+  public static canUseTeamWorkspace(subscription: UserSubscription | null): FeatureAccessResult {
     const plan = PlanDefinitions.getPlan(subscription?.planId || "FREE");
     const allowed = this.isSubscriptionOperational(subscription) && plan.limits.teamMembersCount > 1;
 
     return {
       allowed,
       limit: plan.limits.teamMembersCount,
-      reason: allowed ? undefined : "Team collaboration features require a BUSINESS subscription.",
+      reason: allowed ? undefined : "Team workspaces require a BUSINESS subscription.",
+    };
+  }
+
+  public static canUseTeamFeatures(subscription: UserSubscription | null): FeatureAccessResult {
+    return this.canUseTeamWorkspace(subscription);
+  }
+
+  /**
+   * Verify agency client management access
+   */
+  public static canManageClients(subscription: UserSubscription | null): FeatureAccessResult {
+    const plan = PlanDefinitions.getPlan(subscription?.planId || "FREE");
+    const allowed = this.isSubscriptionOperational(subscription) && plan.planId === "BUSINESS";
+
+    return {
+      allowed,
+      reason: allowed ? undefined : "Client management & agency tools require a BUSINESS subscription.",
     };
   }
 }

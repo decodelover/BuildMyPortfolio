@@ -43,15 +43,25 @@ export interface BillingEngineStoreState {
 
   // Permission Checkers
   checkFeature: (userId: string, featureKey: string) => boolean;
+  canAccessDashboard: () => FeatureAccessResult;
   canGeneratePortfolio: () => FeatureAccessResult;
   canPublishPortfolio: () => FeatureAccessResult;
-  canUseAI: (requestedCredits?: number) => FeatureAccessResult;
+  canCreatePortfolio: () => FeatureAccessResult;
+  canDeletePortfolio: () => FeatureAccessResult;
   canExportResume: () => FeatureAccessResult;
+  canGenerateResume: () => FeatureAccessResult;
   canUsePremiumTemplates: () => FeatureAccessResult;
+  canUseAI: (requestedCredits?: number) => FeatureAccessResult;
+  canUseAdvancedAI: () => FeatureAccessResult;
+  canUseSEO: () => FeatureAccessResult;
+  canUseAnalytics: () => FeatureAccessResult;
   canConnectDomain: () => FeatureAccessResult;
-  canAccessAnalytics: () => FeatureAccessResult;
+  canRemoveBranding: () => FeatureAccessResult;
   canUseCustomBranding: () => FeatureAccessResult;
-  canUseTeamFeatures: () => FeatureAccessResult;
+  canUseVersionHistory: () => FeatureAccessResult;
+  canAccessMarketplace: () => FeatureAccessResult;
+  canUseTeamWorkspace: () => FeatureAccessResult;
+  canManageClients: () => FeatureAccessResult;
 
   resetBillingStore: () => void;
 }
@@ -125,6 +135,11 @@ export const useBillingEngineStore = create<BillingEngineStoreState>((set, get) 
     return result.allowed;
   },
 
+  canAccessDashboard: () => {
+    const { subscription } = get();
+    return PermissionService.canAccessDashboard(subscription);
+  },
+
   canGeneratePortfolio: () => {
     const { subscription, usage } = get();
     return PermissionService.canGeneratePortfolio(subscription, usage);
@@ -135,9 +150,14 @@ export const useBillingEngineStore = create<BillingEngineStoreState>((set, get) 
     return PermissionService.canPublishPortfolio(subscription, usage);
   },
 
-  canUseAI: (requestedCredits = 1) => {
+  canCreatePortfolio: () => {
     const { subscription, usage } = get();
-    return PermissionService.canUseAI(subscription, usage, requestedCredits);
+    return PermissionService.canCreatePortfolio(subscription, usage);
+  },
+
+  canDeletePortfolio: () => {
+    const { subscription } = get();
+    return PermissionService.canDeletePortfolio(subscription);
   },
 
   canExportResume: () => {
@@ -145,9 +165,34 @@ export const useBillingEngineStore = create<BillingEngineStoreState>((set, get) 
     return PermissionService.canExportResume(subscription, usage);
   },
 
+  canGenerateResume: () => {
+    const { subscription, usage } = get();
+    return PermissionService.canGenerateResume(subscription, usage);
+  },
+
   canUsePremiumTemplates: () => {
     const { subscription } = get();
     return PermissionService.canUsePremiumTemplates(subscription);
+  },
+
+  canUseAI: (requestedCredits = 1) => {
+    const { subscription, usage } = get();
+    return PermissionService.canUseAI(subscription, usage, requestedCredits);
+  },
+
+  canUseAdvancedAI: () => {
+    const { subscription } = get();
+    return PermissionService.canUseAdvancedAI(subscription);
+  },
+
+  canUseSEO: () => {
+    const { subscription } = get();
+    return PermissionService.canUseSEO(subscription);
+  },
+
+  canUseAnalytics: () => {
+    const { subscription } = get();
+    return PermissionService.canUseAnalytics(subscription);
   },
 
   canConnectDomain: () => {
@@ -155,9 +200,9 @@ export const useBillingEngineStore = create<BillingEngineStoreState>((set, get) 
     return PermissionService.canConnectDomain(subscription, usage);
   },
 
-  canAccessAnalytics: () => {
+  canRemoveBranding: () => {
     const { subscription } = get();
-    return PermissionService.canAccessAnalytics(subscription);
+    return PermissionService.canRemoveBranding(subscription);
   },
 
   canUseCustomBranding: () => {
@@ -165,9 +210,24 @@ export const useBillingEngineStore = create<BillingEngineStoreState>((set, get) 
     return PermissionService.canUseCustomBranding(subscription);
   },
 
-  canUseTeamFeatures: () => {
+  canUseVersionHistory: () => {
     const { subscription } = get();
-    return PermissionService.canUseTeamFeatures(subscription);
+    return PermissionService.canUseVersionHistory(subscription);
+  },
+
+  canAccessMarketplace: () => {
+    const { subscription } = get();
+    return PermissionService.canAccessMarketplace(subscription);
+  },
+
+  canUseTeamWorkspace: () => {
+    const { subscription } = get();
+    return PermissionService.canUseTeamWorkspace(subscription);
+  },
+
+  canManageClients: () => {
+    const { subscription } = get();
+    return PermissionService.canManageClients(subscription);
   },
 
   resetBillingStore: () => {

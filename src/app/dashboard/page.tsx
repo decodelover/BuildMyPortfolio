@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useBillingEngineStore } from "@/store/useBillingEngineStore";
 import { motion } from "framer-motion";
 import {
   Sparkles,
@@ -11,7 +12,6 @@ import {
   FolderKanban,
   CreditCard,
   PlusCircle,
-  ArrowRight,
   TrendingUp,
   Activity,
   ArrowUpRight,
@@ -31,6 +31,7 @@ interface ActivityLog {
 
 export default function DashboardHome() {
   const { user } = useAuthStore();
+  const { activePlan, usage, loadUserBillingState } = useBillingEngineStore();
 
   const [totalPortfolios, setTotalPortfolios] = useState(0);
   const [publishedPortfolios, setPublishedPortfolios] = useState(0);
@@ -64,6 +65,7 @@ export default function DashboardHome() {
 
   useEffect(() => {
     if (!user) return;
+    loadUserBillingState(user.uid);
 
     const fetchStats = async () => {
       try {
@@ -120,7 +122,7 @@ export default function DashboardHome() {
     };
 
     fetchStats();
-  }, [user]);
+  }, [user, loadUserBillingState]);
 
   // SVG dimensions for chart drawing
   const chartWidth = 500;
@@ -146,6 +148,8 @@ export default function DashboardHome() {
   // Area filling path for gradient under the line chart
   const areaPath = `${linePath} L ${coordinates[coordinates.length - 1].x} ${chartHeight - padding} L ${coordinates[0].x} ${chartHeight - padding} Z`;
 
+  const remainingCredits = activePlan ? Math.max(0, activePlan.limits.aiCreditsPerMonth - (usage?.aiCreditsUsed || 0)) : 50;
+
   const stats = [
     {
       label: "Total Portfolios",
@@ -163,14 +167,14 @@ export default function DashboardHome() {
     },
     {
       label: "Current Plan",
-      value: user?.currentPlan || "FREE",
+      value: activePlan?.name || user?.currentPlan || "FREE",
       desc: "Membership status",
       icon: <CreditCard className="h-5 w-5 text-primary" />,
       color: "bg-primary/10 border-primary/20",
     },
     {
       label: "AI Credits Left",
-      value: `${user?.aiCredits ?? 100}/100`,
+      value: `${remainingCredits}/${activePlan?.limits.aiCreditsPerMonth || 50}`,
       desc: "Gemini writing quota",
       icon: <Zap className="h-5 w-5 text-accent animate-pulse" />,
       color: "bg-accent/10 border-accent/20",
@@ -179,7 +183,6 @@ export default function DashboardHome() {
 
   return (
     <div className="space-y-8 text-left max-w-7xl mx-auto">
-      
       {/* Welcome Banner */}
       <div className="rounded-2xl border border-border bg-gradient-to-r from-primary/15 via-accent/5 to-transparent p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 shadow-sm relative overflow-hidden">
         <div className="absolute top-0 right-0 h-40 w-40 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
@@ -228,7 +231,6 @@ export default function DashboardHome() {
 
       {/* Dynamic Graph & Performance Insights */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
         {/* Interactive SVG Chart */}
         <div className="lg:col-span-8 rounded-2xl border border-border bg-card p-6 shadow-sm space-y-6 flex flex-col justify-between">
           <div className="flex items-center justify-between flex-wrap gap-4 border-b border-border pb-4">
@@ -356,7 +358,6 @@ export default function DashboardHome() {
 
         {/* Right side: Actions & Logs */}
         <div className="lg:col-span-4 space-y-6">
-          
           {/* Quick links preset */}
           <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
             <h3 className="font-bold text-foreground text-sm flex items-center gap-1.5">
@@ -372,7 +373,7 @@ export default function DashboardHome() {
                 <span>Edit Profile Details</span>
                 <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
               </Link>
-              
+
               <Link
                 href="/dashboard/themes"
                 className="flex items-center justify-between rounded-xl border border-border p-3.5 hover:bg-muted/50 hover:border-primary/45 transition-colors group"
@@ -411,11 +412,8 @@ export default function DashboardHome() {
               ))}
             </div>
           </div>
-
         </div>
-
       </div>
-
     </div>
   );
 }
