@@ -11,6 +11,8 @@ import { WorkflowVisualization } from "@/components/marketing/WorkflowVisualizat
 import { QualityScoreDemo } from "@/components/marketing/QualityScoreDemo";
 import { PlatformComparisonMatrix } from "@/components/marketing/PlatformComparisonMatrix";
 import { ROICalculator } from "@/components/marketing/ROICalculator";
+import { InteractiveFeatureShowcase } from "@/components/marketing/InteractiveFeatureShowcase";
+import { ScrollReveal } from "@/components/marketing/ScrollReveal";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Sparkles, ArrowRight, Star } from "lucide-react";
@@ -45,94 +47,115 @@ export default function HomePage() {
 
       <Navbar />
 
-      <main className="flex-1 relative z-10">
+      <main className="flex-1 relative z-10 space-y-4">
         {/* World-Class Hero with Live Streaming AI Demo */}
         <WorldClassHero />
 
         {/* Animated Counter Stats */}
-        <AnimatedCounterStats />
+        <ScrollReveal direction="up" delay={0.1}>
+          <AnimatedCounterStats />
+        </ScrollReveal>
+
+        {/* Interactive Tabbed Feature Showcase */}
+        <ScrollReveal direction="up" delay={0.1}>
+          <InteractiveFeatureShowcase />
+        </ScrollReveal>
 
         {/* Live Interactive Playground Sandbox */}
-        <InteractivePlayground />
+        <ScrollReveal direction="up" delay={0.1}>
+          <InteractivePlayground />
+        </ScrollReveal>
 
         {/* 4-Stage AI Pipeline Showcase */}
-        <WorkflowVisualization />
+        <ScrollReveal direction="up" delay={0.1}>
+          <WorkflowVisualization />
+        </ScrollReveal>
 
         {/* Automated QA Audit Scanner Demo */}
-        <QualityScoreDemo />
+        <ScrollReveal direction="up" delay={0.1}>
+          <QualityScoreDemo />
+        </ScrollReveal>
 
         {/* Platform Comparison Matrix */}
-        <PlatformComparisonMatrix />
+        <ScrollReveal direction="up" delay={0.1}>
+          <PlatformComparisonMatrix />
+        </ScrollReveal>
 
         {/* ROI Time & Cost Savings Calculator */}
-        <ROICalculator />
+        <ScrollReveal direction="up" delay={0.1}>
+          <ROICalculator />
+        </ScrollReveal>
 
         {/* Testimonials */}
-        <section className="py-16 sm:py-24 relative overflow-hidden text-center select-none">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-12">
-            <div className="max-w-3xl mx-auto space-y-3">
-              <span className="px-3.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-extrabold uppercase tracking-wider">
-                Customer Success Stories
-              </span>
-              <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
-                Loved by Engineers &amp; Designers Worldwide
-              </h2>
-            </div>
+        <ScrollReveal direction="up" delay={0.1}>
+          <section className="py-16 sm:py-24 relative overflow-hidden text-center select-none">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-12">
+              <div className="max-w-3xl mx-auto space-y-3">
+                <span className="px-3.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-extrabold uppercase tracking-wider">
+                  Customer Success Stories
+                </span>
+                <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
+                  Loved by Engineers &amp; Designers Worldwide
+                </h2>
+              </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
-              {testimonials.map((t, idx) => (
-                <motion.div
-                  key={idx}
-                  whileHover={{ y: -6 }}
-                  transition={{ duration: 0.2 }}
-                  className="rounded-3xl border border-border/60 bg-card/70 p-6 shadow-sm backdrop-blur-2xl space-y-4 flex flex-col justify-between"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-1 text-amber-500">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="h-4 w-4 fill-amber-500" />
-                      ))}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+                {testimonials.map((t, idx) => (
+                  <motion.div
+                    key={idx}
+                    whileHover={{ y: -6 }}
+                    transition={{ duration: 0.2 }}
+                    className="rounded-3xl border border-border/60 bg-card/70 p-6 shadow-sm backdrop-blur-2xl space-y-4 flex flex-col justify-between"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-1 text-amber-500">
+                        {[...Array(5)].map((_, i) => (
+                          <Star key={i} className="h-4 w-4 fill-amber-500" />
+                        ))}
+                      </div>
+                      <p className="text-xs text-muted-foreground leading-relaxed font-medium">"{t.text}"</p>
                     </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed font-medium">"{t.text}"</p>
-                  </div>
 
-                  <div className="flex items-center gap-3 pt-3 border-t border-border/40">
-                    <img src={t.avatar} alt={t.name} className="h-9 w-9 rounded-full object-cover border border-border" />
-                    <div>
-                      <h4 className="text-xs font-bold text-foreground">{t.name}</h4>
-                      <p className="text-[10px] text-muted-foreground">{t.role}</p>
+                    <div className="flex items-center gap-3 pt-3 border-t border-border/40">
+                      <img src={t.avatar} alt={t.name} className="h-9 w-9 rounded-full object-cover border border-border" />
+                      <div>
+                        <h4 className="text-xs font-bold text-foreground">{t.name}</h4>
+                        <p className="text-[10px] text-muted-foreground">{t.role}</p>
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Final CTA Banner */}
-        <section className="py-16 sm:py-20 relative overflow-hidden text-center select-none">
-          <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-            <div className="rounded-3xl border border-border/80 bg-gradient-to-r from-card via-card/80 to-primary/20 p-8 sm:p-12 shadow-2xl backdrop-blur-2xl space-y-6">
-              <span className="px-3.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-extrabold uppercase tracking-wider">
-                Ready to Launch?
-              </span>
-              <h2 className="text-3xl sm:text-5xl font-black text-foreground">
-                Build Your Personal Portfolio Today
-              </h2>
-              <p className="text-xs sm:text-base text-muted-foreground max-w-xl mx-auto font-medium leading-relaxed">
-                Join over 28,000 developers and designers who present their work with BuildMyPortfolio.
-              </p>
-              <div className="pt-2">
-                <Link
-                  href="/register"
-                  className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-black text-sm shadow-xl shadow-primary/25 hover:opacity-95 transition-all cursor-pointer"
-                >
-                  Create Your Portfolio Free <ArrowRight className="h-4 w-4" />
-                </Link>
+                  </motion.div>
+                ))}
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        </ScrollReveal>
+
+        {/* Final CTA Banner */}
+        <ScrollReveal direction="zoom" delay={0.1}>
+          <section className="py-16 sm:py-20 relative overflow-hidden text-center select-none">
+            <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+              <div className="rounded-3xl border border-border/80 bg-gradient-to-r from-card via-card/80 to-primary/20 p-8 sm:p-12 shadow-2xl backdrop-blur-2xl space-y-6">
+                <span className="px-3.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-extrabold uppercase tracking-wider">
+                  Ready to Launch?
+                </span>
+                <h2 className="text-3xl sm:text-5xl font-black text-foreground">
+                  Build Your Personal Portfolio Today
+                </h2>
+                <p className="text-xs sm:text-base text-muted-foreground max-w-xl mx-auto font-medium leading-relaxed">
+                  Join over 28,000 developers and designers who present their work with BuildMyPortfolio.
+                </p>
+                <div className="pt-2">
+                  <Link
+                    href="/register"
+                    className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-black text-sm shadow-xl shadow-primary/25 hover:opacity-95 transition-all cursor-pointer"
+                  >
+                    Create Your Portfolio Free <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </section>
+        </ScrollReveal>
       </main>
 
       <Footer />
