@@ -258,9 +258,24 @@ export class PermissionService {
     return this.canUseTeamWorkspace(subscription);
   }
 
-  /**
-   * Verify agency client management access
-   */
+  public static canAccessBilling(subscription: UserSubscription | null): FeatureAccessResult {
+    const allowed = this.isSubscriptionOperational(subscription);
+    return {
+      allowed,
+      reason: allowed ? undefined : "Billing portal access requires an operational user account.",
+    };
+  }
+
+  public static canUseWhiteLabel(subscription: UserSubscription | null): FeatureAccessResult {
+    const plan = PlanDefinitions.getPlan(subscription?.planId || "FREE");
+    const allowed = this.isSubscriptionOperational(subscription) && plan.planId === "BUSINESS";
+
+    return {
+      allowed,
+      reason: allowed ? undefined : "White-label branding customization requires a BUSINESS subscription.",
+    };
+  }
+
   public static canManageClients(subscription: UserSubscription | null): FeatureAccessResult {
     const plan = PlanDefinitions.getPlan(subscription?.planId || "FREE");
     const allowed = this.isSubscriptionOperational(subscription) && plan.planId === "BUSINESS";
@@ -268,6 +283,16 @@ export class PermissionService {
     return {
       allowed,
       reason: allowed ? undefined : "Client management & agency tools require a BUSINESS subscription.",
+    };
+  }
+
+  public static canAccessAdmin(role?: string): FeatureAccessResult {
+    const normalized = (role || "").toUpperCase();
+    const allowed = normalized === "ADMIN" || normalized === "SUPER_ADMIN";
+
+    return {
+      allowed,
+      reason: allowed ? undefined : "Administrative features require elevated system administrator privileges.",
     };
   }
 }

@@ -14,12 +14,15 @@ export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Retrieve user session identifier (token or session cookie)
-  // Firebase Auth session cookie is traditionally named '__session' for Firebase Hosting compatibility
   const sessionToken = request.cookies.get("__session")?.value || request.cookies.get("token")?.value;
 
-  // Check user role from cookies (case-insensitive check for ADMIN)
+  // Check user role from cookies (case-insensitive check for ADMIN or SUPER_ADMIN)
   const userRole = request.cookies.get("user_role")?.value?.toUpperCase();
-  const isAdmin = userRole === "ADMIN";
+  const isAdmin = userRole === "ADMIN" || userRole === "SUPER_ADMIN";
+
+  // Check subscription operational status from cookie
+  const subStatus = request.cookies.get("sub_status")?.value?.toLowerCase();
+  const isSuspended = subStatus === "suspended" || subStatus === "expired";
 
   const isProtected = protectedPaths.some((path) => pathname.startsWith(path));
   const isAdminRoute = adminPaths.some((path) => pathname.startsWith(path));
@@ -28,12 +31,18 @@ export function proxy(request: NextRequest) {
   // If trying to access a protected dashboard route without a session, redirect to login
   if (isProtected && !sessionToken) {
     const loginUrl = new URL("/login", request.url);
-    // Save the original path to redirect back after login
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // If trying to access an admin route, verify the user is authenticated and has the admin role
+  // If subscription is suspended/expired and accessing dashboard, redirect to billing portal (except if already on billing)
+  if (isProtected && sessionToken && isSuspended && pathname !== "/dashboard/billing") {
+    const billingUrl = new URL("/dashboard/billing", request.url);
+    billingUrl.searchParams.set("reason", "subscription_inactive");
+    return NextResponse.redirect(billingUrl);
+  }
+
+  // If trying to access an admin route, verify authentication and admin role
   if (isAdminRoute) {
     if (!sessionToken) {
       const loginUrl = new URL("/login", request.url);
@@ -41,7 +50,6 @@ export function proxy(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
     if (!isAdmin) {
-      // Forbidden - redirect authenticated non-admins to dashboard
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
   }
@@ -56,14 +64,6 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public assets (images, icons, logos, illustrations, themes)
-     */
     "/((?!api|_next/static|_next/image|favicon.ico|images|icons|logos|illustrations|themes).*)",
   ],
 };
