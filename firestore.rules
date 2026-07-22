@@ -81,6 +81,36 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    // Rules for promotions: coupons (Public read for promo codes)
+    match /coupons/{couponId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Rules for promotions: coupon_redemptions
+    match /coupon_redemptions/{redemptionId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Rules for promotions: referrals
+    match /referrals/{referralId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Rules for promotions: referral_rewards
+    match /referral_rewards/{rewardId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Rules for promotions: promotion_campaigns
+    match /promotion_campaigns/{campaignId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
     // Rules for the notifications collection
     match /notifications/{notificationId} {
       allow create: if isAuthenticated();

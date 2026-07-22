@@ -165,12 +165,56 @@ export interface CheckoutSession {
 
 export interface Coupon {
   code: string;
-  discountType: "percentage" | "fixed";
+  discountType: "percentage" | "fixed" | "free_trial" | "first_month_free";
   amount: number;
+  currency?: string;
   validUntil: string;
   maxRedemptions?: number;
   redemptionsCount: number;
   applicablePlans?: PlanId[];
+  minPurchaseAmount?: number;
+  isActive?: boolean;
+}
+
+export interface CouponRedemption {
+  redemptionId: string;
+  code: string;
+  userId: string;
+  redeemedAt: string;
+  discountApplied: number;
+  invoiceId?: string;
+}
+
+export interface ReferralRecord {
+  referralId: string;
+  referrerUserId: string;
+  referralCode: string;
+  referredUserId: string;
+  referredUserEmail: string;
+  status: "pending" | "completed" | "rewarded";
+  createdAt: string;
+  completedAt?: string;
+}
+
+export interface ReferralReward {
+  rewardId: string;
+  userId: string;
+  rewardType: "ai_credits" | "free_month" | "storage_bonus";
+  amount: number;
+  status: "available" | "claimed";
+  createdAt: string;
+  claimedAt?: string;
+}
+
+export interface PromotionalCampaign {
+  campaignId: string;
+  name: string;
+  type: "launch" | "black_friday" | "cyber_monday" | "seasonal";
+  discountPercentage: number;
+  startDate: string;
+  endDate: string;
+  bannerText: string;
+  isActive: boolean;
 }
 
 export interface RefundRecord {

@@ -8,6 +8,9 @@ import { useBillingEngineStore } from "@/store/useBillingEngineStore";
 import { UsageProgressBar } from "@/components/dashboard/usage-progress-bar";
 import { PaymentMethodCard } from "@/components/dashboard/payment-method-card";
 import { BillingTimeline } from "@/components/dashboard/billing-timeline";
+import { PromotionBanner } from "@/components/dashboard/promotion-banner";
+import { CouponInput } from "@/components/dashboard/coupon-input";
+import { ReferralDashboard } from "@/components/dashboard/referral-dashboard";
 import { UpgradeModal } from "@/components/shared/upgrade-modal";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -159,6 +162,9 @@ export default function BillingPage() {
 
   return (
     <div className="space-y-8 text-left max-w-6xl mx-auto">
+      {/* Active Promotion Marketing Banner */}
+      <PromotionBanner onUpgradeClick={() => setIsUpgradeModalOpen(true)} />
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
@@ -242,6 +248,9 @@ export default function BillingPage() {
           periodEnd={formattedPeriodEnd}
         />
       </div>
+
+      {/* Referral Rewards Program Section */}
+      <ReferralDashboard />
 
       {/* Subscription Plans & Cycle Switcher */}
       <div className="space-y-6">
