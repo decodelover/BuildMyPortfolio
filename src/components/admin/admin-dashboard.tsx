@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 
 import { BillingAnalyticsDashboard } from "./billing-analytics-dashboard";
+import { AdminLayout } from "./layout/admin-layout";
 
 interface AdminStatCardProps {
   title: string;
@@ -202,7 +203,9 @@ export function AdminDashboardContent() {
 export function AdminDashboard() {
   return (
     <AdminRoute>
-      <AdminDashboardContent />
+      <AdminLayout>
+        <AdminDashboardContent />
+      </AdminLayout>
     </AdminRoute>
   );
 }
