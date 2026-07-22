@@ -16,6 +16,8 @@ import {
   AlertTriangle
 } from "lucide-react";
 
+import { BillingAnalyticsDashboard } from "./billing-analytics-dashboard";
+
 interface AdminStatCardProps {
   title: string;
   value: string | number;
@@ -68,13 +70,13 @@ export function AdminDashboardContent() {
   );
 
   return (
-    <div className="min-h-screen bg-background p-6 lg:p-10 space-y-8">
+    <div className="min-h-screen bg-background p-6 lg:p-10 space-y-10">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Admin Console</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            System administration, user oversight, and platform metrics dashboard.
+            System administration, financial intelligence, user oversight, and platform metrics.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -87,6 +89,9 @@ export function AdminDashboardContent() {
           </button>
         </div>
       </div>
+
+      {/* Financial & Subscription Business Intelligence Analytics Dashboard */}
+      <BillingAnalyticsDashboard />
 
       {/* Stats Overview Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
