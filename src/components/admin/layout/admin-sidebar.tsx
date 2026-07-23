@@ -12,6 +12,8 @@ import {
   Settings,
   Shield,
   ChevronRight,
+  Sparkles,
+  Folder,
 } from "lucide-react";
 
 interface AdminSidebarProps {
@@ -26,7 +28,9 @@ export function AdminSidebar({ isOpen, onCloseMobile }: AdminSidebarProps) {
     { label: "Overview", href: "/admin", icon: LayoutDashboard },
     { label: "Users & Roles", href: "/admin/users", icon: Users },
     { label: "Subscriptions", href: "/admin/subscriptions", icon: CreditCard },
-    { label: "Revenue Analytics", href: "/admin/analytics", icon: BarChart3 },
+    { label: "Portfolios Directory", href: "/admin/portfolios", icon: Folder },
+    { label: "AI Operations", href: "/admin/ai-ops", icon: Sparkles },
+    { label: "Analytics & BI", href: "/admin/analytics", icon: BarChart3 },
     { label: "Support Tickets", href: "/admin/support", icon: HelpCircle },
     { label: "System Settings", href: "/admin/settings", icon: Settings },
     { label: "Security Audit", href: "/admin/audit-logs", icon: Shield },

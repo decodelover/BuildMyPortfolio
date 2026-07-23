@@ -1,15 +1,5 @@
-import { AdminDashboard } from "@/components/admin/admin-dashboard";
-import { Metadata } from "next";
-
-export const metadata: Metadata = {
-  title: "Admin Console | BuildMyPortfolio",
-  description: "Enterprise administration and platform metrics dashboard.",
-  robots: {
-    index: false,
-    follow: false,
-  },
-};
+import { AdminDashboardContent } from "@/components/admin/admin-dashboard";
 
 export default function AdminPage() {
-  return <AdminDashboard />;
+  return <AdminDashboardContent />;
 }
