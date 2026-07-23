@@ -1,5 +1,5 @@
-import { AdminAuditLogsView } from "@/components/admin/admin-audit-logs-view";
+import { AdminMonitoringConsole } from "@/components/admin/monitoring/admin-monitoring-console";
 
 export default function AdminAuditLogsPage() {
-  return <AdminAuditLogsView />;
+  return <AdminMonitoringConsole />;
 }

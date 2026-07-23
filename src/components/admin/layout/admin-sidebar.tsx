@@ -33,7 +33,7 @@ export function AdminSidebar({ isOpen, onCloseMobile }: AdminSidebarProps) {
     { label: "Analytics & BI", href: "/admin/analytics", icon: BarChart3 },
     { label: "Support Tickets", href: "/admin/support", icon: HelpCircle },
     { label: "System Settings", href: "/admin/settings", icon: Settings },
-    { label: "Security Audit", href: "/admin/audit-logs", icon: Shield },
+    { label: "System & Logs", href: "/admin/audit-logs", icon: Shield },
   ];
 
   return (
