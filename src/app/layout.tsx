@@ -12,6 +12,9 @@ const inter = Inter({
   fallback: ["system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "sans-serif"],
 });
 
+import { PublicHeader } from "@/components/layout/public-header";
+import { PublicFooter } from "@/components/layout/public-footer";
+
 export const metadata = constructMetadata();
 
 export default function RootLayout({
@@ -30,7 +33,9 @@ export default function RootLayout({
         >
           <AuthProvider>
             <div className="relative flex min-h-screen flex-col">
-              {children}
+              <PublicHeader />
+              <main className="flex-1">{children}</main>
+              <PublicFooter />
             </div>
             <ToastProvider />
           </AuthProvider>
